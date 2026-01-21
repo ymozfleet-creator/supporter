@@ -3,208 +3,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | チーム支援プラットフォーム</title>
+    <title>MySupporter | チーム検索・支援</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0a0a0c; color: #ffffff; margin: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #060608; color: #ffffff; margin: 0; overflow-x: hidden; }
+        .glass-panel { background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .campaign-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .campaign-card:hover { border-color: rgba(249, 115, 22, 0.5); transform: translateY(-8px) scale(1.02); }
+        .progress-glow { box-shadow: 0 0 15px rgba(249, 115, 22, 0.6); background: linear-gradient(90deg, #f97316 0%, #fdba74 100%); }
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 2rem;
-        }
-        .text-accent { color: #f97316; }
-        .btn-primary {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
-        .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
-        .progress-accent {
-            background: linear-gradient(90deg, #f97316, #fb923c);
-            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
-        }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        input[type="checkbox"] { accent-color: #f97316; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useMemo } = React;
+
+        const LegalModal = ({ title, content, isOpen, onClose }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6" onClick={onClose}>
+                    <div className="bg-[#111] border border-white/10 w-full max-w-2xl max-h-[80vh] rounded-[2rem] overflow-hidden flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="p-8 border-b border-white/5 flex justify-between items-center shrink-0">
+                            <h2 className="text-xl font-black italic text-orange-500 uppercase tracking-tighter">{title}</h2>
+                            <button onClick={onClose} className="text-slate-500 hover:text-white font-black text-xs tracking-widest transition-colors">CLOSE</button>
+                        </div>
+                        <div className="p-8 overflow-y-auto text-sm text-slate-300 leading-relaxed font-medium space-y-4 no-scrollbar">
+                            {content}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         const App = () => {
             const [view, setView] = useState('list');
             const [activeTab, setActiveTab] = useState('campaigns'); 
+            const [searchQuery, setSearchQuery] = useState("");
+            const [selectedCategory, setSelectedCategory] = useState("すべて");
             const [selected, setSelected] = useState(null);
             const [amount, setAmount] = useState(1000);
             const [customAmount, setCustomAmount] = useState("");
-
-            // 金額計算：(Amazon価格 + 送料500円) * 1.1
-            const calcTarget = (p) => Math.floor((p + 500) * 1.1);
+            const [showRegister, setShowRegister] = useState(false);
+            const [supporter, setSupporter] = useState({ name: "", email: "", age: "" });
+            const [agreed, setAgreed] = useState(false);
+            const [modal, setModal] = useState({ open: false, title: '', content: null });
+            
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [loginForm, setLoginForm] = useState({ email: "", password: "" });
 
             const campaigns = [
-                { 
-                    id: 1, team: "東京サッカーアカデミー", name: "公式試合球 5号 10個セット", 
-                    asin: "B00X9S5Y6Y", amazonPrice: 58000, current: 34000, supporters: 12
-                },
-                { 
-                    id: 2, team: "品川ライオンズ", name: "トレーニング用ミニハードル", 
-                    asin: "B01DLYG66M", amazonPrice: 8500, current: 2000, supporters: 3
-                }
+                { id: 1, team: "東京サッカーアカデミー", category: "サッカー", name: "公式試合球 10個セット", asin: "B00X9S5Y6Y", amazonPrice: 58000, current: 65000, supporters: 12, daysLeft: 5 },
+                { id: 2, team: "品川ライオンズ", category: "野球", name: "トレーニング用ミニハードル", asin: "B01DLYG66M", amazonPrice: 8500, current: 2000, supporters: 3, daysLeft: 12 },
+                { id: 3, team: "横浜バスケットクラブ", category: "バスケ", name: "デジタルタイマー 1台", asin: "B000ASB0M4", amazonPrice: 12000, current: 14000, supporters: 8, daysLeft: 3 }
             ];
 
-            const openDetail = (item) => {
-                setSelected(item);
-                setView('detail');
-                setAmount(1000);
-                setCustomAmount("");
-                window.scrollTo(0, 0);
+            const filteredCampaigns = useMemo(() => {
+                return campaigns.filter(c => {
+                    const matchSearch = c.team.toLowerCase().includes(searchQuery.toLowerCase()) || c.name.toLowerCase().includes(searchQuery.toLowerCase());
+                    const matchCat = selectedCategory === "すべて" || c.category === selectedCategory;
+                    return matchSearch && matchCat;
+                });
+            }, [searchQuery, selectedCategory]);
+
+            const calcTarget = (p) => Math.floor((p + 500) * 1.1);
+            
+            // 達成済み商品のフィルタリング
+            const achievedCampaigns = useMemo(() => {
+                return campaigns.filter(c => c.current >= calcTarget(c.amazonPrice));
+            }, [campaigns]);
+
+            const handleFinalCheckout = () => {
+                if (!supporter.email || !supporter.age) {
+                    alert("メールアドレスと年齢は必須入力です。");
+                    return;
+                }
+                alert(`サポーター情報を保存しました。\nStripe決済画面へ移行します (金額: ¥${amount.toLocaleString()})`);
+                setView('list');
+                setShowRegister(false);
+                setAgreed(false);
             };
 
-            const handleCustomAmount = (e) => {
-                const val = e.target.value;
-                setCustomAmount(val);
-                if (val >= 500) setAmount(Number(val));
+            const handleAdminLogin = () => {
+                if (loginForm.email === "y.moz.fleet@gmail.com" && loginForm.password === "Rushers1#") {
+                    setIsAdmin(true);
+                    setView('admin');
+                } else {
+                    alert("認証情報が正しくありません。");
+                }
             };
 
-            const targetWithFee = selected ? calcTarget(selected.amazonPrice) : 0;
-            const remaining = selected ? targetWithFee - selected.current : 0;
+            const docContent = {
+                terms: (
+                    <div className="space-y-4">
+                        <p className="font-bold text-white border-b border-white/10 pb-2 uppercase tracking-tighter italic">第1条（目的）</p>
+                        <p>本規約は、MySupporter（以下「当サービス」）が提供する、スポーツチーム等への物品支援プラットフォームの利用条件を定めるものです。</p>
+                        <p className="font-bold text-white border-b border-white/10 pb-2 uppercase tracking-tighter italic">第2条（支援の仕組み）</p>
+                        <p>サポーターが支払った支援金は、当サービスが受領し、目標金額に達した時点で対象商品をAmazon等のECサイトで購入し、チームへ直接配送します。システム手数料（10%）および配送・資材一律料金（500円）が支援金に含まれます。</p>
+                        <p className="font-bold text-white border-b border-white/10 pb-2 uppercase tracking-tighter italic">第3条（キャンセル・返金）</p>
+                        <p>一度完了した決済は、理由の如何を問わずキャンセル・返金することはできません。万が一チームが解散した等の場合は、同等の活動を行う他団体への支援に充てさせていただきます。</p>
+                    </div>
+                ),
+                privacy: (
+                    <div className="space-y-4">
+                        <p className="font-bold text-white border-b border-white/10 pb-2 uppercase tracking-tighter italic">1. 取得する情報</p>
+                        <p>当サービスは、支援時に氏名、メールアドレス、年齢を取得します。</p>
+                        <p className="font-bold text-white border-b border-white/10 pb-2 uppercase tracking-tighter italic">2. 利用目的</p>
+                        <p>取得した情報は、支援の管理、不測の事態の連絡、およびチームからのサンクスメッセージ送付のために利用します。</p>
+                        <p className="font-bold text-white border-b border-white/10 pb-2 uppercase tracking-tighter italic">3. 第三者への提供</p>
+                        <p>決済処理のためにStripe社へ、また物品の発送・報告のために支援先チームへ必要な範囲で情報を共有します。</p>
+                    </div>
+                ),
+                tokusho: (
+                    <div className="space-y-4">
+                        <table className="w-full text-left text-[13px]">
+                            <tbody className="divide-y divide-white/5">
+                                <tr><th className="py-3 text-white w-1/3">販売業者</th><td className="py-3">MySupporter 運営事務局</td></tr>
+                                <tr><th className="py-3 text-white">代表責任者</th><td className="py-3">茂住 雄太</td></tr>
+                                <tr><th className="py-3 text-white">所在地</th><td className="py-3">東京都中野区江原町2-13-13</td></tr>
+                                <tr><th className="py-3 text-white">メールアドレス</th><td className="py-3 text-orange-500">kanri@mycoach-myteam.com</td></tr>
+                                <tr><th className="py-3 text-white">販売価格</th><td className="py-3">各募集ページに表示される金額（税込）</td></tr>
+                                <tr><th className="py-3 text-white">支払方法</th><td className="py-3">クレジットカード決済（Stripe）</td></tr>
+                                <tr><th className="py-3 text-white">商品の引渡時期</th><td className="py-3">目標達成後、5営業日〜7日以内に発送</td></tr>
+                                <tr><th className="py-3 text-white">返品・交換</th><td className="py-3">寄付・支援の性質上、決済後の返品・返金には応じられません。</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                )
+            };
 
             return (
-                <div className="min-h-screen">
-                    {/* Header */}
-                    <nav className="h-20 border-b border-white/10 flex items-center justify-between px-8 sticky top-0 bg-[#0a0a0c]/80 backdrop-blur-md z-50">
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('list')}>
-                            <div className="bg-orange-500 w-8 h-8 rounded-lg flex items-center justify-center italic font-black text-white shadow-lg">S</div>
-                            <span className="font-black text-2xl tracking-tighter uppercase italic text-white leading-none">MySupporter</span>
-                        </div>
-                        <div className="hidden md:flex items-center gap-10">
-                            <button onClick={() => {setView('list'); setActiveTab('campaigns');}} className={`text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'campaigns' && view === 'list' ? 'text-accent border-b-2 border-orange-500 pb-1' : 'text-slate-400'}`}>支援募集</button>
-                            <button onClick={() => {setView('list'); setActiveTab('thanks');}} className={`text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'thanks' && view === 'list' ? 'text-accent border-b-2 border-orange-500 pb-1' : 'text-slate-400'}`}>活動報告</button>
-                        </div>
-                        <div className="text-[10px] font-black bg-white/10 px-4 py-2 rounded-full uppercase tracking-widest text-slate-300">DEMO USER</div>
-                    </nav>
-
-                    <main className="max-w-5xl mx-auto p-8">
-                        {view === 'list' ? (
-                            <div className="fade-in">
-                                <header className="mb-16">
-                                    <h1 className="text-6xl font-black italic tracking-tighter mb-4 uppercase leading-none">Support your Team</h1>
-                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">MyCOACH-MyTEAM 連携プラットフォーム</p>
-                                </header>
-                                {activeTab === 'campaigns' ? (
-                                    <div className="grid gap-8">
-                                        {campaigns.map(c => {
-                                            const total = calcTarget(c.amazonPrice);
-                                            const progress = (c.current / total) * 100;
-                                            return (
-                                                <div key={c.id} className="glass-panel p-8 flex flex-col md:flex-row gap-10 items-center hover:bg-white/[0.05] transition-all cursor-pointer group shadow-2xl" onClick={() => openDetail(c)}>
-                                                    <div className="w-52 h-52 bg-white rounded-[2.5rem] p-8 flex items-center justify-center shrink-0 shadow-2xl overflow-hidden">
-                                                        <img src={`https://images-na.ssl-images-amazon.com/images/P/${c.asin}.01.LZZZZZZZ.jpg`} className="max-h-full group-hover:scale-110 transition-transform duration-500" />
-                                                    </div>
-                                                    <div className="flex-1 w-full space-y-6">
-                                                        <div className="space-y-1">
-                                                            <span className="text-sm font-black text-accent uppercase tracking-[0.3em]">{c.team}</span>
-                                                            <h3 className="text-3xl font-black italic uppercase leading-tight tracking-tighter">{c.name}</h3>
-                                                        </div>
-                                                        <div className="space-y-3">
-                                                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                                                <span>Progress: {progress.toFixed(0)}%</span>
-                                                                <span className="text-white italic text-xs">目標: ¥{total.toLocaleString()}</span>
-                                                            </div>
-                                                            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                                                <div className="h-full progress-accent" style={{width: `${progress}%`}}></div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex justify-between items-center pt-2">
-                                                            <span className="text-[10px] font-black text-slate-500 uppercase">{c.supporters} Supporters</span>
-                                                            <button className="px-10 py-4 btn-primary rounded-xl font-black text-sm uppercase italic tracking-widest shadow-lg">支援に参加</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="max-w-2xl mx-auto py-10 space-y-8 fade-in">
-                                        <div className="glass-panel p-10 border-l-4 border-l-orange-500">
-                                            <p className="text-2xl font-bold italic">「支援者様のおかげで、最高の練習ができています！」</p>
-                                        </div>
-                                    </div>
-                                )}
+                <div className="min-h-screen flex flex-col">
+                    <div className="flex-grow">
+                        <nav className="h-24 flex items-center justify-between px-6 md:px-12 sticky top-0 bg-[#060608]/90 backdrop-blur-xl z-50 border-b border-white/5 gap-8">
+                            <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => {setView('list'); setActiveTab('campaigns'); setShowRegister(false);}}>
+                                <div className="bg-orange-600 w-10 h-10 rounded-xl flex items-center justify-center italic font-black text-white shadow-lg">S</div>
+                                <span className="font-black text-2xl tracking-tighter uppercase italic text-white hidden sm:block">MySupporter</span>
                             </div>
-                        ) : (
-                            /* --- 詳細・自由入力決済画面 --- */
-                            <div className="max-w-3xl mx-auto fade-in py-10">
-                                <button onClick={() => setView('list')} className="text-slate-500 font-black flex items-center gap-2 hover:text-white transition uppercase text-xs tracking-widest mb-10 group">
-                                    <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to List
-                                </button>
-                                
-                                <div className="glass-panel p-10 space-y-12 shadow-2xl">
-                                    <div className="flex flex-col md:flex-row gap-10 items-center">
-                                        <div className="w-40 h-40 bg-white rounded-3xl p-6 shrink-0 flex items-center justify-center">
-                                            <img src={`https://images-na.ssl-images-amazon.com/images/P/${selected.asin}.01.LZZZZZZZ.jpg`} className="max-h-full" />
-                                        </div>
-                                        <div className="space-y-2 text-center md:text-left">
-                                            <p className="text-accent font-black text-lg uppercase tracking-[0.3em]">{selected.team}</p>
-                                            <h2 className="text-3xl font-black italic uppercase leading-tight tracking-tighter">{selected.name}</h2>
-                                        </div>
-                                    </div>
+                            <div className="flex-1 max-w-xl relative border border-white/10 bg-white/5 rounded-2xl transition-all overflow-hidden focus-within:border-orange-500">
+                                <input type="text" placeholder="学校名や商品で検索..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent py-3 px-12 outline-none text-sm font-bold" />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"><svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
+                            </div>
+                            <div className="hidden lg:flex bg-white/5 p-1 rounded-full border border-white/10">
+                                {['campaigns', 'howitworks', 'thanks'].map(tab => (
+                                    <button key={tab} onClick={() => {setView('list'); setActiveTab(tab);}} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+                                        {tab === 'campaigns' ? '支援募集' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
+                                    </button>
+                                ))}
+                            </div>
+                        </nav>
 
-                                    <div className="space-y-8">
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            {[1000, 3000, 5000].map(val => (
-                                                <button key={val} onClick={() => {setAmount(val); setCustomAmount("");}} className={`py-4 rounded-xl font-black text-sm border transition-all ${amount === val && customAmount === "" ? 'bg-orange-500 border-orange-500 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}>¥{val.toLocaleString()}</button>
-                                            ))}
-                                            <button onClick={() => {setAmount(remaining); setCustomAmount("");}} className={`py-4 rounded-xl font-black text-sm border transition-all ${amount === remaining ? 'bg-orange-500 border-orange-500 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:text-white'}`}>全額支援</button>
-                                        </div>
-
-                                        <div className="relative">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-3 ml-2">支援金額を自由に指定 (500円以上)</label>
-                                            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 px-6 focus-within:border-orange-500 transition-all">
-                                                <span className="text-2xl font-black text-slate-500">¥</span>
-                                                <input 
-                                                    type="number" 
-                                                    placeholder="500" 
-                                                    value={customAmount}
-                                                    onChange={handleCustomAmount}
-                                                    className="bg-transparent w-full py-4 text-2xl font-black outline-none text-white placeholder:text-slate-800"
-                                                />
+                        <main className="max-w-7xl mx-auto px-6 pt-10 pb-20">
+                            {view === 'list' ? (
+                                <div className="fade-in">
+                                    {activeTab === 'campaigns' ? (
+                                        <>
+                                            <div className="flex gap-3 mb-12 overflow-x-auto pb-4 no-scrollbar">
+                                                {["すべて", "サッカー", "野球", "バスケ"].map(cat => (
+                                                    <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${selectedCategory === cat ? 'bg-white text-black border-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20'}`}>{cat}</button>
+                                                ))}
                                             </div>
-                                            {customAmount !== "" && customAmount < 500 && <p className="text-[10px] text-red-500 font-bold mt-2 ml-2 uppercase">※ 500円以上の金額を入力してください</p>}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white/5 p-10 rounded-[2.5rem] border border-white/10">
-                                        <div className="flex justify-between items-end mb-10 italic">
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest block">お支払い金額</span>
-                                                <span className="text-[10px] text-slate-600 uppercase font-bold tracking-tighter italic block">Supported Amount</span>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                                {filteredCampaigns.map(c => {
+                                                    const total = calcTarget(c.amazonPrice);
+                                                    const progress = Math.min((c.current / total) * 100, 100);
+                                                    return (
+                                                        <div key={c.id} className="campaign-card glass-panel rounded-[2.5rem] flex flex-col overflow-hidden cursor-pointer group" onClick={() => {setSelected(c); setView('detail'); setShowRegister(false); setAmount(1000); setCustomAmount("");}}>
+                                                            <div className="aspect-square bg-white m-4 rounded-[2rem] p-8 flex items-center justify-center shadow-inner relative overflow-hidden shrink-0">
+                                                                <img src={`https://images-na.ssl-images-amazon.com/images/P/${c.asin}.01.LZZZZZZZ.jpg`} className="max-h-full group-hover:scale-110 transition-transform duration-700" />
+                                                                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 text-[10px] font-black text-orange-500 uppercase">残り {c.daysLeft}日</div>
+                                                            </div>
+                                                            <div className="p-8 pt-2 space-y-6 flex-1 flex flex-col">
+                                                                <div className="space-y-2">
+                                                                    <p className="text-xl font-black italic text-orange-500 uppercase tracking-tighter truncate">{c.team}</p>
+                                                                    <h3 className="text-2xl font-black italic uppercase leading-tight tracking-tighter h-14 overflow-hidden line-clamp-2">{c.name}</h3>
+                                                                </div>
+                                                                <div className="space-y-3 bg-white/[0.03] p-5 rounded-2xl border border-white/5 mt-auto">
+                                                                    <div className="flex justify-between items-end">
+                                                                        <div className="flex items-baseline gap-1">
+                                                                            <span className="text-3xl font-black italic tracking-tighter">¥{c.current.toLocaleString()}</span>
+                                                                            <span className="text-sm font-bold text-slate-600 italic">/ ¥{total.toLocaleString()}</span>
+                                                                        </div>
+                                                                        <span className="text-2xl font-black italic text-orange-600">{progress.toFixed(0)}%</span>
+                                                                    </div>
+                                                                    <div className="w-full h-3 bg-white/5 rounded-full p-[2px] border border-white/10"><div className="h-full progress-glow rounded-full transition-all duration-1000" style={{width: `${progress}%`}}></div></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
-                                            <span className="text-7xl font-black text-accent tracking-tighter animate-pulse">¥{amount.toLocaleString()}</span>
+                                        </>
+                                    ) : activeTab === 'howitworks' ? (
+                                        <div className="max-w-3xl mx-auto py-10 fade-in">
+                                            <h2 className="text-4xl font-black italic uppercase mb-16 tracking-tighter border-b border-white/10 pb-6 text-orange-500">ご利用フロー</h2>
+                                            <div className="space-y-0 relative">
+                                                <div className="absolute left-[27px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-orange-600 via-orange-600/50 to-transparent"></div>
+                                                {[
+                                                    { step: "01", title: "支援したい募集を探す", desc: "チーム側で欲しいものリストから登録された募集から、支援したい項目を選びます。" },
+                                                    { step: "02", title: "個人情報を入力し決済", desc: "年齢・メールアドレス等の必要情報を入力し、Stripeによる安全なオンライン決済を行います。" },
+                                                    { step: "03", title: "支援チームに到着", desc: "目標金額に達すると、Amazonから直接チームへ商品が発送・到着します。" },
+                                                    { step: "04", title: "サンクスメッセージが届く", desc: "到着後、チームから活動報告が発行され、マイページ等で確認できます。" }
+                                                ].map((item, idx) => (
+                                                    <div key={idx} className="flex gap-10 pb-16 relative">
+                                                        <div className="w-14 h-14 rounded-full bg-[#060608] border-2 border-orange-600 flex items-center justify-center shrink-0 z-10 font-black italic text-orange-500 text-xl shadow-[0_0_15px_rgba(249,115,22,0.3)]">{item.step}</div>
+                                                        <div className="pt-2">
+                                                            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-3">{item.title}</h3>
+                                                            <p className="text-slate-400 font-bold leading-relaxed">{item.desc}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <button 
-                                            disabled={amount < 500}
-                                            onClick={() => { alert(`¥${amount.toLocaleString()} の支援ありがとうございます！決済画面へ。`); setView('list'); }}
-                                            className="w-full py-7 btn-primary rounded-2xl font-black text-2xl uppercase italic shadow-2xl tracking-widest"
-                                        >Pay with Stripe</button>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 fade-in">
+                                            <div className="glass-panel p-8 rounded-[2.5rem] border-l-4 border-l-orange-600 space-y-4 shadow-xl">
+                                                <p className="text-xl font-black italic text-orange-500 uppercase tracking-tighter">横浜バスケットクラブ</p>
+                                                <h3 className="text-2xl font-black italic tracking-tighter">感謝のメッセージを公開しました</h3>
+                                                <p className="text-slate-400 text-sm leading-relaxed font-bold">皆様の多大なるご支援により、新しい用具を揃えることができました！大会でも結果が出せるよう、チーム一丸となって頑張ります。</p>
+                                                <div className="pt-4 flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-orange-500"><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">128 Supporters Loved this</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : view === 'detail' ? (
+                                <div className="max-w-5xl mx-auto fade-in py-4">
+                                    <button onClick={() => {setView('list'); setShowRegister(false);}} className="text-slate-500 font-black flex items-center gap-2 hover:text-white transition uppercase text-[10px] tracking-[0.3em] mb-12">← Back</button>
+                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+                                        <div className="lg:col-span-3">
+                                            <div className="glass-panel p-10 rounded-[3rem] space-y-10">
+                                                <div className="space-y-4">
+                                                    <p className="text-4xl font-black italic text-orange-500 uppercase tracking-tighter">{selected.team}</p>
+                                                    <h2 className="text-5xl font-black italic uppercase leading-none tracking-tighter">{selected.name}</h2>
+                                                </div>
+                                                <div className="w-full bg-white rounded-[2.5rem] p-12 shadow-2xl flex justify-center items-center h-80">
+                                                    <img src={`https://images-na.ssl-images-amazon.com/images/P/${selected.asin}.01.LZZZZZZZ.jpg`} className="max-h-full" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="lg:col-span-2">
+                                            {!showRegister ? (
+                                                <div className="glass-panel p-10 rounded-[3rem] border-t-8 border-t-orange-600 shadow-2xl">
+                                                    <p className="text-7xl font-black text-white italic tracking-tighter mb-10">¥{amount.toLocaleString()}</p>
+                                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                                        {[1000, 3000, 5000].map(val => (
+                                                            <button key={val} onClick={() => {setAmount(val); setCustomAmount("");}} className={`py-5 rounded-2xl font-black text-lg border transition-all ${amount === val && customAmount === "" ? 'bg-orange-600 border-orange-600 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:border-white/20'}`}>¥{val.toLocaleString()}</button>
+                                                        ))}
+                                                        <button onClick={() => {setAmount(1000); setCustomAmount("");}} className="py-5 rounded-2xl font-black text-lg border border-orange-500/50 text-orange-500 hover:bg-orange-500/10 transition-colors">残り全額</button>
+                                                    </div>
+                                                    <input type="number" placeholder="自由に入力" value={customAmount} onChange={(e) => {setCustomAmount(e.target.value); if(e.target.value >= 500) setAmount(Number(e.target.value));}} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 mb-8 text-xl font-black outline-none italic text-white focus:border-orange-500 transition-colors" />
+                                                    <button onClick={() => setShowRegister(true)} className="w-full py-6 bg-gradient-to-r from-orange-600 to-orange-400 rounded-2xl font-black text-xl uppercase italic shadow-2xl tracking-[0.1em] hover:scale-[1.02] active:scale-95 transition-all">次へ進む</button>
+                                                </div>
+                                            ) : (
+                                                <div className="glass-panel p-10 rounded-[3rem] border-t-8 border-t-orange-600 space-y-6 shadow-2xl">
+                                                    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-orange-500">サポーター登録</h3>
+                                                    <input type="text" placeholder="お名前（任意）" value={supporter.name} onChange={e => setSupporter({...supporter, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 font-bold outline-none focus:border-orange-500 transition-colors" />
+                                                    <input type="email" placeholder="メール（必須）" value={supporter.email} onChange={e => setSupporter({...supporter, email: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 font-bold outline-none focus:border-orange-500 transition-colors" />
+                                                    <input type="number" placeholder="年齢（必須）" value={supporter.age} onChange={e => setSupporter({...supporter, age: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 font-bold outline-none focus:border-orange-500 transition-colors" />
+                                                    
+                                                    <div className="flex items-start gap-3 py-2">
+                                                        <input type="checkbox" checked={agreed} onChange={() => setAgreed(!agreed)} className="mt-1 shrink-0 cursor-pointer w-4 h-4" id="agree-check" />
+                                                        <label htmlFor="agree-check" className="text-[10px] text-slate-400 leading-relaxed font-bold cursor-pointer select-none">
+                                                            <button onClick={(e) => { e.preventDefault(); setModal({open: true, title: '利用規約', content: docContent.terms}); }} className="text-orange-500 underline hover:text-orange-400">利用規約</button> および <button onClick={(e) => { e.preventDefault(); setModal({open: true, title: 'プライバシーポリシー', content: docContent.privacy}); }} className="text-orange-500 underline hover:text-orange-400">プライバシーポリシー</button> に同意して支援を確定します。
+                                                        </label>
+                                                    </div>
+
+                                                    <button onClick={handleFinalCheckout} disabled={!agreed} className={`w-full py-6 rounded-2xl font-black text-xl uppercase italic shadow-2xl tracking-[0.1em] transition-all ${agreed ? 'bg-gradient-to-r from-orange-600 to-orange-400 opacity-100 cursor-pointer hover:scale-[1.02]' : 'bg-white/10 text-slate-600 cursor-not-allowed'}`}>Pay with Stripe</button>
+                                                    <button onClick={() => setShowRegister(false)} className="w-full text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] hover:text-white transition-colors">← 戻る</button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </main>
+                            ) : view === 'login' ? (
+                                <div className="max-w-md mx-auto fade-in py-20">
+                                    <div className="glass-panel p-10 rounded-[3rem] border-t-8 border-orange-500 space-y-8">
+                                        <h2 className="text-3xl font-black italic uppercase tracking-tighter text-center">ADMIN LOGIN</h2>
+                                        <div className="space-y-4">
+                                            <input type="email" placeholder="Email" value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 font-bold outline-none focus:border-orange-500" />
+                                            <input type="password" placeholder="Password" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 font-bold outline-none focus:border-orange-500" />
+                                        </div>
+                                        <button onClick={handleAdminLogin} className="w-full py-5 bg-orange-600 rounded-xl font-black italic uppercase tracking-widest hover:bg-orange-500 transition-colors">Login</button>
+                                        <button onClick={() => setView('list')} className="w-full text-slate-500 font-bold text-[10px] uppercase tracking-widest">Cancel</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="fade-in space-y-12">
+                                    <div className="flex justify-between items-end border-b border-white/10 pb-8">
+                                        <div>
+                                            <p className="text-orange-500 font-black italic uppercase tracking-widest text-xs mb-2">Management Console</p>
+                                            <h2 className="text-5xl font-black italic uppercase tracking-tighter">管理者ダッシュボード</h2>
+                                        </div>
+                                        <button onClick={() => {setIsAdmin(false); setView('list');}} className="px-6 py-2 border border-white/20 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors">Logout</button>
+                                    </div>
 
-                    <footer className="py-24 text-center opacity-20">
-                        <div className="font-black italic text-3xl uppercase tracking-tighter mb-4 text-white">MySupporter</div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-700 italic">© 2026 Powered by MyCOACH-MyTEAM</p>
+                                    {/* 購入アラートセクション */}
+                                    {achievedCampaigns.length > 0 && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-orange-500 font-black italic uppercase tracking-widest text-sm">⚠️ 購入アラート（目標達成済み）</h3>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {achievedCampaigns.map(c => (
+                                                    <div key={c.id} className="bg-orange-600/10 border border-orange-600/30 p-6 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6">
+                                                        <div className="flex items-center gap-6">
+                                                            <div className="w-16 h-16 bg-white rounded-xl p-2 shrink-0">
+                                                                <img src={`https://images-na.ssl-images-amazon.com/images/P/${c.asin}.01.LZZZZZZZ.jpg`} className="w-full h-full object-contain" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] font-black uppercase text-orange-500 italic">{c.team}</p>
+                                                                <p className="text-lg font-black italic tracking-tighter uppercase">{c.name}</p>
+                                                            </div>
+                                                        </div>
+                                                        <a 
+                                                            href={`https://www.amazon.co.jp/dp/${c.asin}`} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="px-8 py-4 bg-orange-600 rounded-2xl font-black italic uppercase tracking-widest text-sm hover:bg-orange-500 transition-all shadow-[0_0_20px_rgba(249,115,22,0.4)] whitespace-nowrap"
+                                                        >
+                                                            Amazonで購入する
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        {[
+                                            { label: "総支援金額", value: "¥45,000", color: "text-white" },
+                                            { label: "取引数", value: "23件", color: "text-white" },
+                                            { label: "利益 (10%手 - 決済3.6%)", value: `¥${Math.floor(45000 * (0.1 - 0.036)).toLocaleString()}`, color: "text-orange-500" },
+                                            { label: "アクティブ募集", value: "3件", color: "text-white" }
+                                        ].map((stat, i) => (
+                                            <div key={i} className="glass-panel p-8 rounded-3xl">
+                                                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
+                                                <p className={`text-3xl font-black italic tracking-tighter ${stat.color}`}>{stat.value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="glass-panel rounded-[2rem] overflow-hidden">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                                <tr>
+                                                    <th className="p-6">募集チーム / 商品</th>
+                                                    <th className="p-6">進捗率</th>
+                                                    <th className="p-6">現在額</th>
+                                                    <th className="p-6">支援者数</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5 font-bold text-sm">
+                                                {campaigns.map(c => (
+                                                    <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                                                        <td className="p-6">
+                                                            <p className="text-orange-500 text-xs italic font-black uppercase">{c.team}</p>
+                                                            <p className="text-white">{c.name}</p>
+                                                        </td>
+                                                        <td className="p-6 italic">{((c.current / calcTarget(c.amazonPrice)) * 100).toFixed(1)}%</td>
+                                                        <td className="p-6">¥{c.current.toLocaleString()}</td>
+                                                        <td className="p-6">{c.supporters}名</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </main>
+                    </div>
+
+                    <footer className="bg-black/50 border-t border-white/5 py-16 px-6">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+                            <div className="flex items-center gap-3 opacity-50">
+                                <div className="bg-white/20 w-8 h-8 rounded-lg flex items-center justify-center italic font-black text-white text-xs">S</div>
+                                <span className="font-black text-lg tracking-tighter uppercase italic text-white">MySupporter</span>
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-10">
+                                <button onClick={() => setModal({open: true, title: '利用規約', content: docContent.terms})} className="text-[10px] font-black uppercase text-slate-500 hover:text-orange-500 transition-colors">利用規約</button>
+                                <button onClick={() => setModal({open: true, title: 'プライバシーポリシー', content: docContent.privacy})} className="text-[10px] font-black uppercase text-slate-500 hover:text-orange-500 transition-colors">プライバシーポリシー</button>
+                                <button onClick={() => setModal({open: true, title: '特定商取引法に基づく表記', content: docContent.tokusho})} className="text-[10px] font-black uppercase text-slate-500 hover:text-orange-500 transition-colors">特定商取引法に基づく表記</button>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <p className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">© 2026 MySupporter. All Rights Reserved.</p>
+                                <button onClick={() => setView('login')} className="text-[10px] font-black text-slate-800 hover:text-orange-500/50 transition-colors uppercase tracking-widest">Admin</button>
+                            </div>
+                        </div>
                     </footer>
+
+                    <LegalModal isOpen={modal.open} title={modal.title} content={modal.content} onClose={() => setModal({open: false, title: '', content: null})} />
                 </div>
             );
         };
