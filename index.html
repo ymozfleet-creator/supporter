@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | Official Release (Mobile Grid Fixed)</title>
+    <title>MySupporter | Official Release (Mobile Nav Fixed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -84,9 +84,7 @@
         const App = () => {
             const [isAdminMode, setIsAdminMode] = useState(false);
             const [view, setView] = useState('home'); 
-            
             const [activeTab, setActiveTab] = useState('top'); 
-            
             const [adminTab, setAdminTab] = useState('requests');
             const [searchQuery, setSearchQuery] = useState("");
             const [selectedCampaign, setSelectedCampaign] = useState(null);
@@ -401,6 +399,21 @@
                         </div>
                     </nav>
 
+                    {/* ★追加: スマホ用メニューバー (Navbarの下にSticky配置) */}
+                    {!isAdminMode && view === 'home' && (
+                        <div className="md:hidden sticky top-20 z-40 bg-[#060608]/95 border-b border-white/5 backdrop-blur-xl overflow-x-auto no-scrollbar">
+                            <div className="flex px-4 py-3 gap-3 min-w-max">
+                                {['campaigns', 'about', 'howitworks', 'thanks'].map(tab => (
+                                    <button key={tab} onClick={() => {setView('home'); setActiveTab(tab); window.scrollTo({ top: 0, behavior: 'smooth' });}} 
+                                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap 
+                                        ${activeTab === tab ? 'bg-orange-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+                                        {tab === 'about' ? 'MySUPPORTERとは' : tab === 'campaigns' ? '支援募集' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <main className="flex-grow">
                         {view === 'admin' && isAdminMode ? (
                             <div className="max-w-7xl mx-auto p-4 md:p-12 fade-in">
@@ -527,7 +540,6 @@
                             </div>
                         ) : view === 'home' ? (
                             <>
-                                {/* ★★★ 修正: ヒーローとリストの分離表示 ★★★ */}
                                 {/* Top: ヒーロービジョン + 支援募集一覧 */}
                                 {activeTab === 'top' && (
                                     <>
@@ -550,7 +562,7 @@
                                             <div className="w-16 h-1 md:w-24 md:h-2 bg-orange-600 mx-auto mt-12 md:mt-16 rounded-full"></div>
                                         </section>
 
-                                        {/* List (Common Component) */}
+                                        {/* List */}
                                         <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 pb-32">
                                             {filteredCampaigns.map(c => {
                                                 const target = calcTarget(c.price);
@@ -574,7 +586,6 @@
                                     </>
                                 )}
 
-                                {/* Campaigns: 支援募集一覧のみ (ヒーローなし) */}
                                 {activeTab === 'campaigns' && (
                                     <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 py-32 fade-in">
                                         {filteredCampaigns.map(c => {
