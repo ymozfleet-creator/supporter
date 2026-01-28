@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | Official Release (Mobile Nav Fixed)</title>
+    <title>MySupporter | Official Release (Apply Form Fixed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -399,7 +399,7 @@
                         </div>
                     </nav>
 
-                    {/* ★追加: スマホ用メニューバー (Navbarの下にSticky配置) */}
+                    {/* スマホ用メニューバー */}
                     {!isAdminMode && view === 'home' && (
                         <div className="md:hidden sticky top-20 z-40 bg-[#060608]/95 border-b border-white/5 backdrop-blur-xl overflow-x-auto no-scrollbar">
                             <div className="flex px-4 py-3 gap-3 min-w-max">
@@ -540,6 +540,7 @@
                             </div>
                         ) : view === 'home' ? (
                             <>
+                                {/* ★★★ 修正: ヒーローとリストの分離表示 ★★★ */}
                                 {/* Top: ヒーロービジョン + 支援募集一覧 */}
                                 {activeTab === 'top' && (
                                     <>
@@ -562,7 +563,7 @@
                                             <div className="w-16 h-1 md:w-24 md:h-2 bg-orange-600 mx-auto mt-12 md:mt-16 rounded-full"></div>
                                         </section>
 
-                                        {/* List */}
+                                        {/* List (Common Component) */}
                                         <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 pb-32">
                                             {filteredCampaigns.map(c => {
                                                 const target = calcTarget(c.price);
@@ -586,6 +587,7 @@
                                     </>
                                 )}
 
+                                {/* Campaigns: 支援募集一覧のみ (ヒーローなし) */}
                                 {activeTab === 'campaigns' && (
                                     <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 py-32 fade-in">
                                         {filteredCampaigns.map(c => {
@@ -707,75 +709,21 @@
                                     </div>
                                 )}
                             </>
-                        ) : view === 'detail' ? (
-                            <div className="max-w-6xl mx-auto p-4 md:p-12 pb-40">
-                                <button onClick={()=>setView('home')} className="text-slate-500 font-black text-xs mb-8">← BACK</button>
-                                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 md:gap-16">
-                                    <div className="lg:col-span-3">
-                                        <div className="glass-panel p-6 md:p-10 rounded-[3rem] border-t-8 border-orange-600 relative">
-                                            {selectedCampaign.current >= calcTarget(selectedCampaign.price) && <div className="absolute top-10 right-10 z-20"><div className="goal-stamp border-8 border-orange-500 text-orange-500 text-5xl font-black p-4 rounded-xl rotate-[-15deg] opacity-50">GOAL!!</div></div>}
-                                            <span className="bg-white text-black px-4 py-1 rounded-full text-sm font-black">{selectedCampaign.team}</span>
-                                            <h2 className="text-3xl md:text-4xl font-black italic mt-4 mb-8">{selectedCampaign.name}</h2>
-                                            <div className="aspect-square bg-white rounded-3xl p-8 md:p-12 flex items-center justify-center"><img src={selectedCampaign.image} className="max-h-full"/></div>
-                                            <div className="mt-8 md:mt-12 pt-8 border-t border-white/10">
-                                                <h4 className="text-sm font-black text-orange-500 uppercase mb-4">Why we need this</h4>
-                                                <p className="text-slate-300 font-bold whitespace-pre-wrap">{selectedCampaign.description}</p>
-                                            </div>
-                                            <div className="mt-12 flex justify-center gap-4">
-                                                <button onClick={copyToClipboard} className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center hover:bg-orange-600 transition">🔗</button>
-                                                <a href={`https://twitter.com/intent/tweet?text=${shareText(selectedCampaign)}&url=${shareUrl}`} target="_blank" className="w-12 h-12 bg-black rounded-full flex items-center justify-center border border-white/20">𝕏</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="lg:col-span-2">
-                                        <div className="glass-panel p-6 rounded-[2rem] border border-white/10 sticky top-24">
-                                            {supportStep===1 && <div className="space-y-4">
-                                                <h3 className="text-center font-black italic text-orange-500">STEP 1: 金額選択</h3>
-                                                <div className="text-center bg-white/5 rounded-xl p-4">
-                                                    {(() => {
-                                                        const target = calcTarget(selectedCampaign.price);
-                                                        const remaining = target - selectedCampaign.current;
-                                                        if (remaining <= 0) return <><p className="text-3xl font-black text-orange-500">GOAL Reached!</p><p className="text-xs text-slate-500">目標達成しました</p></>;
-                                                        return <><p className="text-xs text-slate-500">あと</p><p className="text-3xl font-black">¥{remaining.toLocaleString()}</p><p className="text-xs text-slate-500">でゴール</p></>;
-                                                    })()}
-                                                </div>
-                                                
-                                                {(() => {
-                                                    const remaining = calcTarget(selectedCampaign.price) - selectedCampaign.current;
-                                                    if (remaining > 0) return (
-                                                        <button onClick={()=>{setSelectedAmount(remaining);setSupportStep(2)}} className="w-full py-4 bg-white text-black rounded-xl font-black italic text-sm hover:scale-[1.02] transition flex justify-between px-6 items-center shadow-lg">
-                                                            <span className="text-xs text-slate-500">全額支援してゴール</span>
-                                                            <span>¥{remaining.toLocaleString()}</span>
-                                                        </button>
-                                                    );
-                                                })()}
-
-                                                <div className="grid grid-cols-3 gap-2">{[1000,3000,5000].map(v=><button key={v} onClick={()=>{setSelectedAmount(v);setSupportStep(2)}} className="py-3 border rounded-xl font-black text-sm hover:border-orange-500">¥{v.toLocaleString()}</button>)}</div>
-                                                <div className="flex gap-2"><input type="number" className="input-field text-center" placeholder="金額指定" onChange={handleCustomAmountChange}/><button onClick={()=>{if(selectedAmount>=1000)setSupportStep(2)}} className="px-4 bg-orange-600 rounded-xl font-black text-xs">決定</button></div>
-                                            </div>}
-                                            {supportStep===2 && <div className="space-y-4">
-                                                <h3 className="text-center font-black italic text-orange-500">STEP 2: 情報</h3>
-                                                <p className="text-center text-2xl font-black">¥{selectedAmount.toLocaleString()}</p>
-                                                <input className="input-field" placeholder="名前" value={supporterName} onChange={e=>setSupporterName(e.target.value)} />
-                                                <input className="input-field" placeholder="Email" value={supporterEmail} onChange={e=>setSupporterEmail(e.target.value)} />
-                                                <button onClick={()=>setSupportStep(3)} className="w-full py-4 bg-orange-600 rounded-xl font-black">次へ</button>
-                                            </div>}
-                                            {supportStep===3 && <div className="space-y-6 text-center py-4">
-                                                <h3 className="font-black italic">STEP 3: 決済</h3>
-                                                <p className="text-xs text-slate-500">Stripe決済（デモ）</p>
-                                                <button onClick={isProcessing ? null : handlePayment} className={`w-full py-4 bg-orange-600 rounded-xl font-black text-xl shadow-xl ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}>
-                                                    {isProcessing ? <div className="loading-spinner"></div> : "決済を確定する"}
-                                                </button>
-                                            </div>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         ) : view === 'apply' ? (
                             <div className="max-w-2xl mx-auto py-12 md:py-24 px-4 md:px-8 fade-in">
                                 <h2 className="text-3xl md:text-4xl font-black italic text-center text-orange-500 mb-8 md:mb-16">掲載リクエスト</h2>
+                                {/* ★修正: 入力項目追加 */}
                                 <div className="glass-panel p-6 md:p-12 rounded-[2rem] md:rounded-[4rem] space-y-6 border-t-[12px] border-orange-600">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><input className="input-field" placeholder="チーム名" value={applyForm.team} onChange={e=>setApplyForm({...applyForm, team: e.target.value})} /><input className="input-field" placeholder="Email" value={applyForm.email} onChange={e=>setApplyForm({...applyForm, email: e.target.value})} /></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <input className="input-field" placeholder="チーム名" value={applyForm.team} onChange={e=>setApplyForm({...applyForm, team: e.target.value})} />
+                                        <input className="input-field" placeholder="Email (連絡用)" value={applyForm.email} onChange={e=>setApplyForm({...applyForm, email: e.target.value})} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <input className="input-field" placeholder="お名前 (担当者)" value={applyForm.contactName} onChange={e=>setApplyForm({...applyForm, contactName: e.target.value})} />
+                                        <input className="input-field" placeholder="電話番号" value={applyForm.phone} onChange={e=>setApplyForm({...applyForm, phone: e.target.value})} />
+                                    </div>
+                                    <input className="input-field" placeholder="発送先住所 (〒含む)" value={applyForm.address} onChange={e=>setApplyForm({...applyForm, address: e.target.value})} />
+                                    
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><input className="input-field" placeholder="チームURL" value={applyForm.teamUrl} onChange={e=>setApplyForm({...applyForm, teamUrl: e.target.value})} /><input className="input-field" placeholder="SNS URL" value={applyForm.snsUrl} onChange={e=>setApplyForm({...applyForm, snsUrl: e.target.value})} /></div>
                                     <input className="input-field" placeholder="商品URL (Amazon/楽天)" value={applyForm.itemUrl} onChange={e=>setApplyForm({...applyForm, itemUrl: e.target.value})} />
                                     <textarea className="input-field h-32" placeholder="理由" value={applyForm.description} onChange={e=>setApplyForm({...applyForm, description: e.target.value})}></textarea>
