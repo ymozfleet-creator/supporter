@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | 最終完全版</title>
+    <title>MySupporter | 完全決定版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -35,7 +35,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // ▼▼▼ Firebase設定 ▼▼▼
+        // ▼▼▼ Firebase設定 (User ID: mysupporter-91816) ▼▼▼
         const firebaseConfig = {
             apiKey: "AIzaSyBc6n-8U-8SNcM1CcP4r9sKweAhLcWajNc",
             authDomain: "mysupporter-91816.firebaseapp.com",
@@ -72,13 +72,14 @@
         };
 
         const App = () => {
-            const [view, setView] = useState('home'); 
+            // State: 管理者モードの状態をlocalStorageから復元
+            const [isAdminMode, setIsAdminMode] = useState(() => localStorage.getItem("ms_isAdmin") === "true");
+            const [view, setView] = useState(() => isAdminMode ? 'admin' : 'home'); 
             const [activeTab, setActiveTab] = useState('campaigns'); 
             const [adminTab, setAdminTab] = useState('requests');
             const [searchQuery, setSearchQuery] = useState("");
             const [selectedCampaign, setSelectedCampaign] = useState(null);
             const [supportStep, setSupportStep] = useState(1);
-            const [isAdminMode, setIsAdminMode] = useState(false);
             const [modal, setModal] = useState({ open: false, title: '', content: null });
             const [selectedAmount, setSelectedAmount] = useState(0); 
             const [customAmountInput, setCustomAmountInput] = useState(""); 
@@ -87,16 +88,24 @@
             const [loginPass, setLoginPass] = useState("");
             const [rakutenCodes, setRakutenCodes] = useState({});
 
-            const [applyForm, setApplyForm] = useState({ team: "", email: "", itemUrl: "", teamUrl: "", snsUrl: "", description: "", image: null });
-            const [applyAgreed, setApplyAgreed] = useState(false);
-            const [reportForm, setReportForm] = useState({ team: "", title: "", content: "", image: null });
+            // フォーム内容をlocalStorageから復元（リロード対策）
+            const [applyForm, setApplyForm] = useState(() => {
+                const saved = localStorage.getItem("ms_applyForm");
+                return saved ? JSON.parse(saved) : { team: "", email: "", itemUrl: "", teamUrl: "", snsUrl: "", description: "", image: null };
+            });
+            const [reportForm, setReportForm] = useState(() => {
+                const saved = localStorage.getItem("ms_reportForm");
+                return saved ? JSON.parse(saved) : { team: "", title: "", content: "", image: null };
+            });
 
+            const [applyAgreed, setApplyAgreed] = useState(false);
             const [campaigns, setCampaigns] = useState([]);
             const [requests, setRequests] = useState([]);
             const [reports, setReports] = useState([]);
 
             const calcTarget = (price) => Math.floor((price + 500) * 1.1);
 
+            // Firebase同期
             useEffect(() => {
                 const unsubC = db.collection("campaigns").onSnapshot(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
                 const unsubR = db.collection("requests").onSnapshot(snap => setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -104,15 +113,32 @@
                 return () => { unsubC(); unsubR(); unsubRep(); };
             }, []);
 
-            // 管理画面用：入力中はStateのみ更新、BlurでDB保存
+            // 状態の自動保存
+            useEffect(() => {
+                localStorage.setItem("ms_isAdmin", isAdminMode);
+                if (!isAdminMode) setView('home'); 
+            }, [isAdminMode]);
+
+            useEffect(() => { localStorage.setItem("ms_applyForm", JSON.stringify(applyForm)); }, [applyForm]);
+            useEffect(() => { localStorage.setItem("ms_reportForm", JSON.stringify(reportForm)); }, [reportForm]);
+
+            // 管理画面用：入力中はState更新、BlurでDB保存
             const handleLocalUpdate = (id, field, value) => {
                 setCampaigns(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
             };
             const saveToDB = async (id, field, value) => {
-                await db.collection("campaigns").doc(id).update({ [field]: value });
+                try { await db.collection("campaigns").doc(id).update({ [field]: value }); } 
+                catch(e) { console.error("Save Error", e); }
+            };
+            const handleRequestLocalUpdate = (id, field, value) => {
+                setRequests(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+            };
+            const saveRequestToDB = async (id, field, value) => {
+                try { await db.collection("requests").doc(id).update({ [field]: value }); } 
+                catch(e) { console.error("Save Error", e); }
             };
 
-            // ▼▼▼ 詳細な法的文書 (完全復元) ▼▼▼
+            // ▼▼▼ 法的文書（完全復元・詳細版） ▼▼▼
             const docContent = {
                 terms: (
                     <div className="space-y-8">
@@ -210,6 +236,12 @@
             const handleLogin = () => {
                 if (loginEmail === "y.moz.fleet@gmail.com" && loginPass === "Rushers1#") { setIsAdminMode(true); setView('admin'); setShowLogin(false); } else { alert("認証エラー"); }
             };
+            const handleLogout = () => {
+                setIsAdminMode(false);
+                setView('home');
+                setLoginEmail("");
+                setLoginPass("");
+            };
             const handleCustomAmountChange = (e) => {
                 setCustomAmountInput(e.target.value);
                 setSelectedAmount(parseInt(e.target.value) || 0);
@@ -230,6 +262,8 @@
                 if(!applyForm.team || !applyForm.email) return alert("必須項目を入力してください");
                 if(!applyAgreed) return alert("規約への同意が必要です");
                 await db.collection("requests").add({ ...applyForm, estimatedPrice: 0, status: "pending", date: new Date().toLocaleDateString('ja-JP') });
+                localStorage.removeItem("ms_applyForm");
+                setApplyForm({ team: "", email: "", itemUrl: "", teamUrl: "", snsUrl: "", description: "", image: null });
                 alert("リクエストを送信しました"); setView('home');
             };
             const approveRequest = async (req) => {
@@ -249,9 +283,10 @@
             const submitReport = async () => {
                 if(!reportForm.team || !reportForm.content) return alert("入力してください");
                 await db.collection("reports").add({ ...reportForm, date: new Date().toLocaleDateString('ja-JP') });
-                alert("公開しました"); setReportForm({ team: "", title: "", content: "", image: null });
+                localStorage.removeItem("ms_reportForm");
+                setReportForm({ team: "", title: "", content: "", image: null });
+                alert("公開しました"); 
             };
-            // 完了メール機能（メーラー起動 + 署名）
             const updateOrderStatus = async (c, s) => {
                 if(confirm("発注完了として処理し、完了メールの下書きを作成しますか？")) {
                     await db.collection("campaigns").doc(c.id).update({ status: s });
@@ -302,7 +337,7 @@
                         </div>
                         <div className="flex gap-4">
                             {!isAdminMode && <button onClick={()=>setView('apply')} className="text-[10px] font-black uppercase border border-white/20 px-6 py-2 rounded-full hover:bg-white hover:text-black transition">掲載リクエスト</button>}
-                            {isAdminMode && <button onClick={()=>{setIsAdminMode(false); setView('home');}} className="text-[10px] font-black bg-red-600 text-white px-6 py-2 rounded-full">ログアウト</button>}
+                            {isAdminMode && <button onClick={handleLogout} className="text-[10px] font-black bg-red-600 text-white px-6 py-2 rounded-full">ログアウト</button>}
                         </div>
                     </nav>
 
@@ -315,9 +350,7 @@
                                 </div>
                                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 mb-12 gap-2 overflow-x-auto">
                                     {['requests', 'campaigns', 'orders', 'reports', 'revenue'].map(t => (
-                                        <button key={t} onClick={()=>setAdminTab(t)} className={`admin-tab ${adminTab===t ? 'active' : 'text-slate-500'}`}>
-                                            {t==='requests'?'リクエスト管理':t==='campaigns'?'募集編集':t==='orders'?'発注管理':t==='reports'?'活動報告作成':'収益管理'}
-                                        </button>
+                                        <button key={t} onClick={()=>setAdminTab(t)} className={`admin-tab ${adminTab===t ? 'active' : 'text-slate-500'}`}>{t==='requests'?'リクエスト管理':t==='campaigns'?'募集編集':t==='orders'?'発注管理':t==='reports'?'活動報告作成':'収益管理'}</button>
                                     ))}
                                 </div>
 
@@ -334,7 +367,12 @@
                                                 <a href={req.teamUrl} target="_blank">HP: {req.teamUrl||"なし"}</a>
                                                 <a href={req.snsUrl} target="_blank">SNS: {req.snsUrl||"なし"}</a>
                                             </div>
-                                            <div className="bg-white/5 p-4 rounded-xl"><label className="text-[10px] font-bold text-orange-500">承認金額</label><input type="number" className="input-field text-xl" value={req.estimatedPrice||''} onChange={e => setRequests(requests.map(r => r.id === req.id ? {...r, estimatedPrice: parseInt(e.target.value)} : r))} /></div>
+                                            <div className="bg-white/5 p-4 rounded-xl"><label className="text-[10px] font-bold text-orange-500">承認金額</label>
+                                                <input type="number" className="input-field text-xl" value={req.estimatedPrice||''} 
+                                                    onChange={e => handleRequestLocalUpdate(req.id, 'estimatedPrice', parseInt(e.target.value))} 
+                                                    onBlur={e => saveRequestToDB(req.id, 'estimatedPrice', parseInt(e.target.value))}
+                                                />
+                                            </div>
                                             <p className="text-sm text-slate-400">{req.description}</p>
                                             <div className="flex gap-4"><button onClick={()=>approveRequest(req)} className="flex-1 bg-orange-600 py-3 rounded-xl font-black text-xs">承認</button><button onClick={()=>deleteDoc("requests", req.id)} className="px-8 border border-white/10 rounded-xl font-black text-xs hover:bg-red-600">削除</button></div>
                                         </div>
@@ -345,7 +383,7 @@
                                     <div key={c.id} className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center">
                                         <div className="w-32 shrink-0 space-y-2">
                                             <div className="w-full h-32 bg-white rounded-2xl overflow-hidden"><img src={c.image} className="w-full h-full object-contain"/></div>
-                                            <input className="input-field py-1 px-2 text-[10px] w-full" placeholder="楽天コード" value={rakutenCodes[c.id]||""} onChange={e=>setRakutenCodes({...rakutenCodes,[c.id]:e.target.value})}/><button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={()=>{const src=extractImageFromCode(rakutenCodes[c.id]);if(src)updateCampaign(c.id,{image:src})}}>画像抽出</button>
+                                            <input className="input-field py-1 px-2 text-[10px] w-full" placeholder="楽天コード" value={rakutenCodes[c.id]||""} onChange={e=>setRakutenCodes({...rakutenCodes,[c.id]:e.target.value})}/><button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={()=>{const src=extractImageFromCode(rakutenCodes[c.id]);if(src)saveToDB(c.id, 'image', src)}}>画像抽出</button>
                                         </div>
                                         <div className="flex-grow grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
                                             <div><label className="text-[10px] text-slate-500 font-bold">チーム名</label><input className="input-field py-1 px-2 text-xs" value={c.team} onChange={e=>handleLocalUpdate(c.id, 'team', e.target.value)} onBlur={e=>saveToDB(c.id, 'team', e.target.value)} /></div>
@@ -414,7 +452,7 @@
                                                 const isGoal = c.current >= target;
 
                                                 return (
-                                                    <div key={c.id} className="campaign-card glass-panel rounded-[2.5rem] p-2 border border-white/5 relative cursor-pointer" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1);}}>
+                                                    <div key={c.id} className="campaign-card glass-panel rounded-[2.5rem] p-2 border border-white/5 relative cursor-pointer" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
                                                         {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-[2.5rem]"><div className="goal-stamp border-8 border-orange-500 text-orange-500 text-6xl font-black p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                         <div className="aspect-square bg-white rounded-[2rem] p-8 flex items-center justify-center m-2"><img src={c.image} className="max-h-full"/></div>
                                                         <div className="p-8">
@@ -429,7 +467,7 @@
                                         </div>
                                     </>
                                 )}
-                                {/* ★★★ ご利用フローの完全復元 ★★★ */}
+                                {/* ご利用フロー復元 */}
                                 {activeTab === 'howitworks' && (
                                     <div className="max-w-6xl mx-auto py-20 px-8 fade-in">
                                         <div className="text-center mb-16"><h2 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-orange-500">ご利用の流れ</h2><p className="text-slate-500 font-bold">簡単3ステップで支援完了</p></div>
@@ -448,7 +486,6 @@
                                         </div>
                                     </div>
                                 )}
-                                {/* ★★★★★★★★★★★★★★★★★★★★★ */}
                                 {activeTab === 'thanks' && (
                                     <div className="max-w-4xl mx-auto py-20 px-8 fade-in">
                                         <h2 className="text-center text-3xl font-black italic uppercase mb-12 tracking-tighter text-orange-500">活動報告</h2>
@@ -488,8 +525,7 @@
                                                         return <><p className="text-xs text-slate-500">あと</p><p className="text-3xl font-black">¥{remaining.toLocaleString()}</p><p className="text-xs text-slate-500">でゴール</p></>;
                                                     })()}
                                                 </div>
-                                                
-                                                {/* ★★★ 全額支援ボタンの復元 ★★★ */}
+                                                {/* 全額支援ボタン復元 */}
                                                 {(() => {
                                                     const remaining = calcTarget(selectedCampaign.price) - selectedCampaign.current;
                                                     if (remaining > 0) return (
@@ -499,8 +535,6 @@
                                                         </button>
                                                     );
                                                 })()}
-                                                {/* ★★★★★★★★★★★★★★★★★★★★★ */}
-
                                                 <div className="grid grid-cols-3 gap-2">{[1000,3000,5000].map(v=><button key={v} onClick={()=>{setSelectedAmount(v);setSupportStep(2)}} className="py-3 border rounded-xl font-black text-sm hover:border-orange-500">¥{v.toLocaleString()}</button>)}</div>
                                                 <div className="flex gap-2"><input type="number" className="input-field text-center" placeholder="金額指定" onChange={handleCustomAmountChange}/><button onClick={()=>{if(selectedAmount>=1000)setSupportStep(2)}} className="px-4 bg-orange-600 rounded-xl font-black text-xs">決定</button></div>
                                             </div>}
