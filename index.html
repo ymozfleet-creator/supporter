@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | 完全版</title>
+    <title>MySupporter | 完全版 (クラウド同期)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
         body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #060608; color: #ffffff; margin: 0; overflow-x: hidden; }
@@ -35,7 +38,25 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
+        // ▼▼▼ Firebase設定 (適用済み) ▼▼▼
+        const firebaseConfig = {
+            apiKey: "AIzaSyBc6n-8U-8SNcM1CcP4r9sKweAhLcWajNc",
+            authDomain: "mysupporter-91816.firebaseapp.com",
+            projectId: "mysupporter-91816",
+            storageBucket: "mysupporter-91816.firebasestorage.app",
+            messagingSenderId: "184010562714",
+            appId: "1:184010562714:web:fed9dbcf100b83a5c39323",
+            measurementId: "G-E12NPFBT9H"
+        };
+        
+        // Firebase初期化
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        // ▲▲▲▲▲▲
+
+        const { useState, useMemo, useEffect } = React;
 
         const LegalModal = ({ title, content, isOpen, onClose }) => {
             if (!isOpen) return null;
@@ -75,97 +96,65 @@
 
             const calcTarget = (price) => Math.floor((price + 500) * 1.1);
 
-            // データ: 支援募集
-            const [campaigns, setCampaigns] = useState([
-                { 
-                    id: 1, 
-                    team: "東京サッカーアカデミー", 
-                    category: "サッカー", 
-                    name: "公式試合球 10個セット", 
-                    price: 58000, 
-                    current: 42000, 
-                    supporters: 24, 
-                    email: "contact@tsa.example.com", 
-                    teamUrl: "https://example.com", 
-                    snsUrl: "https://twitter.com/example",
-                    image: "https://images-na.ssl-images-amazon.com/images/I/81xU7z9E4DL._AC_SL1500_.jpg", 
-                    status: "active", 
-                    month: "2026-01",
-                    description: "全国大会に向けた練習の質を上げるため、公式球が必要です。現在のボールは古くなっており、本番と同じ環境で練習するためにご支援をお願いします。" 
-                },
-                { 
-                    id: 2, 
-                    team: "品川ライオンズ", 
-                    category: "野球", 
-                    name: "トレーニング用ミニハードル", 
-                    price: 8500, 
-                    current: 10000, 
-                    supporters: 8, 
-                    email: "info@lions.example.com", 
-                    teamUrl: "", 
-                    snsUrl: "",
-                    image: "https://m.media-amazon.com/images/I/71m6i-V8NXL._AC_SL1500_.jpg", 
-                    status: "completed", 
-                    month: "2026-01",
-                    description: "冬のトレーニング期間における基礎体力向上のため、室内でも使用できるミニハードルの導入を希望しています。"
-                },
-                { 
-                    id: 3, 
-                    team: "横浜バスケットクラブ", 
-                    category: "バスケ", 
-                    name: "デジタルタイマー 1台", 
-                    price: 12000, 
-                    current: 5000, 
-                    supporters: 45, 
-                    email: "ybc@example.com", 
-                    teamUrl: "", 
-                    snsUrl: "",
-                    image: "https://m.media-amazon.com/images/I/61r-CgB8aJL._AC_SL1000_.jpg", 
-                    status: "active", 
-                    month: "2026-01",
-                    description: "練習試合の効率化のため、古いタイマーを買い替えたいと考えています。"
-                } 
-            ]);
+            // --- サーバー連携データ ---
+            const [campaigns, setCampaigns] = useState([]);
+            const [requests, setRequests] = useState([]);
+            const [reports, setReports] = useState([]);
 
-            // フィルタリング
-            const filteredCampaigns = useMemo(() => {
-                let filtered = campaigns.filter(c => {
-                    const matchSearch = searchQuery === "" || 
-                        c.team.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                        c.name.toLowerCase().includes(searchQuery.toLowerCase());
-                    const isActiveOrCompleted = c.status === 'active' || c.status === 'completed';
-                    return matchSearch && isActiveOrCompleted;
+            // ▼▼▼ サーバーからデータをリアルタイム取得 (useEffect) ▼▼▼
+            useEffect(() => {
+                const unsubCampaigns = db.collection("campaigns").onSnapshot(snapshot => {
+                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setCampaigns(data);
                 });
-
-                return filtered.sort((a, b) => {
-                    const aTarget = calcTarget(a.price);
-                    const bTarget = calcTarget(b.price);
-                    const aIsGoal = a.current >= aTarget;
-                    const bIsGoal = b.current >= bTarget;
-
-                    if (aIsGoal && !bIsGoal) return 1;
-                    if (!aIsGoal && bIsGoal) return -1;
-                    
-                    return b.supporters - a.supporters; 
+                const unsubRequests = db.collection("requests").onSnapshot(snapshot => {
+                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setRequests(data);
                 });
-            }, [campaigns, searchQuery]);
+                const unsubReports = db.collection("reports").onSnapshot(snapshot => {
+                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setReports(data);
+                });
+                return () => { unsubCampaigns(); unsubRequests(); unsubReports(); };
+            }, []);
+            // ▲▲▲▲▲▲
 
-            const [requests, setRequests] = useState([
-                { id: 101, team: "世田谷RedWings", itemUrl: "https://amazon.co.jp/...", description: "練習用ビブスが不足しており、大会に向けて新調したいです。", email: "manager@redwings.example.com", teamUrl: "https://setagaya.example.com", snsUrl: "@setagaya_wings", estimatedPrice: 0, image: null, status: "pending" }
-            ]);
-            
-            // ① 申請フォームに teamUrl, snsUrl を追加
             const [applyForm, setApplyForm] = useState({ team: "", email: "", itemUrl: "", teamUrl: "", snsUrl: "", description: "", image: null });
             const [applyAgreed, setApplyAgreed] = useState(false);
 
-            const [reports, setReports] = useState([
-                { id: 1, team: "品川ライオンズ", title: "ハードルが届きました！", content: "皆様の支援のおかげで、質の高い練習ができています。", image: "https://m.media-amazon.com/images/I/71m6i-V8NXL._AC_SL1500_.jpg", date: "2026-01-25" }
-            ]);
-
             const docContent = {
-                terms: (<div className="space-y-8"><div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第1条（総則）</h3><p>本規約は、MySupporter運営事務局（以下「甲」）が提供する物品支援プラットフォーム「MySupporter」（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意の上、本サービスを利用するものとします。</p></div><div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第2条（支援金の使途と仕組み）</h3><ul className="list-disc pl-5 space-y-2 text-slate-400"><li>本サービスは、サポーターからの支援金を原資として、甲がチームの希望する物品を代理購入し、配送するサービスです。</li><li>支援金には、物品代金のほか、システム利用料（10%）、配送・梱包等の事務手数料（一律500円）が含まれます。</li><li>目標金額に到達した時点で決済が確定し、物品の手配が行われます。</li></ul></div><div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg text-orange-500">第3条（表明保証および禁止事項）</h3><p>掲載を申請するチーム代表者は、以下の事項を表明し保証します。</p><ul className="list-disc pl-5 mt-2 space-y-2 text-slate-400"><li>実在する団体であり、具体的な活動実態があること。</li><li>申請内容（チーム名、活動内容、物品の必要性）に一切の虚偽がないこと。</li><li>反社会的勢力（暴力団、暴力団員、その他これに準ずる者）に該当しないこと。</li></ul><p className="mt-2 text-red-400 font-bold">※虚偽の申請により金銭または物品を受領した場合、詐欺罪としての刑事告訴および損害賠償請求を行います。</p></div><div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第4条（返金・免責）</h3><p>本サービスの性質上（寄付・支援）、原則として決済完了後のサポーター都合による返金・キャンセルは受け付けません。ただし、チームの解散や活動停止により物品送付が不能となった場合は、甲の判断により返金等の措置を講じる場合があります。</p></div></div>),
-                privacy: (<div className="space-y-8"><div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">1. 個人情報の収集</h3><p>本サービスでは、決済処理および商品配送、活動報告のために、以下の個人情報を取得します。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>氏名、メールアドレス、電話番号、住所（配送先のみ）、クレジットカード情報（決済代行業者のみが保持）</li></ul></div><div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">2. 個人情報の利用目的</h3><p>取得した情報は、以下の目的以外には利用しません。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>支援物品の購入および配送業務</li><li>決済手続きおよび領収書等の発行</li><li>サービスに関する重要なお知らせ、活動報告の送付</li></ul></div><div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">3. 第三者提供</h3><p>法令に基づく場合を除き、利用者の同意なく第三者に個人情報を提供することはありません。ただし、支援先のチームに対しては、支援者リストとして氏名（ニックネーム）のみ開示される場合があります。</p></div></div>),
-                tokusho: (<div className="space-y-6"><table className="w-full text-left text-sm border-collapse"><tbody className="divide-y divide-white/10"><tr><th className="py-4 text-white w-1/3">販売業者</th><td className="py-4 text-slate-300">MySupporter 運営事務局</td></tr><tr><th className="py-4 text-white">運営統括責任者</th><td className="py-4 text-slate-300">茂住 雄太</td></tr><tr><th className="py-4 text-white">所在地</th><td className="py-4 text-slate-300">東京都中野区（請求があり次第、遅滞なく開示します）</td></tr><tr><th className="py-4 text-white">連絡先</th><td className="py-4 text-orange-500">kanri@mycoach-myteam.com</td></tr><tr><th className="py-4 text-white">販売価格</th><td className="py-4 text-slate-300">各プロジェクトページに記載（商品代金＋システム手数料＋送料）</td></tr><tr><th className="py-4 text-white">商品代金以外の必要料金</th><td className="py-4 text-slate-300">インターネット接続料金、通信料金等</td></tr><tr><th className="py-4 text-white">支払方法</th><td className="py-4 text-slate-300">クレジットカード決済（Stripe）</td></tr><tr><th className="py-4 text-white">商品の引渡時期</th><td className="py-4 text-slate-300">目標金額達成後、Amazon/楽天等の在庫状況に準じて7営業日以内に発送手配</td></tr><tr><th className="py-4 text-white">キャンセル・返品</th><td className="py-4 text-slate-300">支援という性質上、原則としてお受けできません。</td></tr></tbody></table></div>)
+                terms: (
+                    <div className="space-y-8">
+                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第1条（総則）</h3><p>本規約は、MySupporter運営事務局（以下「甲」）が提供する物品支援プラットフォーム「MySupporter」（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意の上、本サービスを利用するものとします。</p></div>
+                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第2条（支援金の使途と仕組み）</h3><ul className="list-disc pl-5 space-y-2 text-slate-400"><li>本サービスは、サポーターからの支援金を原資として、甲がチームの希望する物品を代理購入し、配送するサービスです。</li><li>支援金には、物品代金のほか、システム利用料（10%）、配送・梱包等の事務手数料（一律500円）が含まれます。</li><li>目標金額に到達した時点で決済が確定し、物品の手配が行われます。</li></ul></div>
+                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg text-orange-500">第3条（表明保証および禁止事項）</h3><p>掲載を申請するチーム代表者は、以下の事項を表明し保証します。</p><ul className="list-disc pl-5 mt-2 space-y-2 text-slate-400"><li>実在する団体であり、具体的な活動実態があること。</li><li>申請内容（チーム名、活動内容、物品の必要性）に一切の虚偽がないこと。</li><li>反社会的勢力（暴力団、暴力団員、その他これに準ずる者）に該当しないこと。</li></ul><p className="mt-2 text-red-400 font-bold">※虚偽の申請により金銭または物品を受領した場合、詐欺罪としての刑事告訴および損害賠償請求を行います。</p></div>
+                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第4条（返金・免責）</h3><p>本サービスの性質上（寄付・支援）、原則として決済完了後のサポーター都合による返金・キャンセルは受け付けません。ただし、チームの解散や活動停止により物品送付が不能となった場合は、甲の判断により返金等の措置を講じる場合があります。</p></div>
+                    </div>
+                ),
+                privacy: (
+                    <div className="space-y-8">
+                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">1. 個人情報の収集</h3><p>本サービスでは、決済処理および商品配送、活動報告のために、以下の個人情報を取得します。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>氏名、メールアドレス、電話番号、住所（配送先のみ）、クレジットカード情報（決済代行業者のみが保持）</li></ul></div>
+                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">2. 個人情報の利用目的</h3><p>取得した情報は、以下の目的以外には利用しません。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>支援物品の購入および配送業務</li><li>決済手続きおよび領収書等の発行</li><li>サービスに関する重要なお知らせ、活動報告の送付</li></ul></div>
+                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">3. 第三者提供</h3><p>法令に基づく場合を除き、利用者の同意なく第三者に個人情報を提供することはありません。ただし、支援先のチームに対しては、支援者リストとして氏名（ニックネーム）のみ開示される場合があります。</p></div>
+                    </div>
+                ),
+                tokusho: (
+                    <div className="space-y-6">
+                        <table className="w-full text-left text-sm border-collapse">
+                            <tbody className="divide-y divide-white/10">
+                                <tr><th className="py-4 text-white w-1/3">販売業者</th><td className="py-4 text-slate-300">MySupporter 運営事務局</td></tr>
+                                <tr><th className="py-4 text-white">運営統括責任者</th><td className="py-4 text-slate-300">茂住 雄太</td></tr>
+                                <tr><th className="py-4 text-white">所在地</th><td className="py-4 text-slate-300">東京都中野区（請求があり次第、遅滞なく開示します）</td></tr>
+                                <tr><th className="py-4 text-white">連絡先</th><td className="py-4 text-orange-500">kanri@mycoach-myteam.com</td></tr>
+                                <tr><th className="py-4 text-white">販売価格</th><td className="py-4 text-slate-300">各プロジェクトページに記載（商品代金＋システム手数料＋送料）</td></tr>
+                                <tr><th className="py-4 text-white">商品代金以外の必要料金</th><td className="py-4 text-slate-300">インターネット接続料金、通信料金等</td></tr>
+                                <tr><th className="py-4 text-white">支払方法</th><td className="py-4 text-slate-300">クレジットカード決済（Stripe）</td></tr>
+                                <tr><th className="py-4 text-white">商品の引渡時期</th><td className="py-4 text-slate-300">目標金額達成後、Amazon/楽天等の在庫状況に準じて7営業日以内に発送手配</td></tr>
+                                <tr><th className="py-4 text-white">キャンセル・返品</th><td className="py-4 text-slate-300">支援という性質上、原則としてお受けできません。</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                )
             };
 
             const handleImageUpload = (e, callback) => {
@@ -185,34 +174,86 @@
 
             const stats = useMemo(() => {
                 const total = campaigns.reduce((acc, c) => acc + c.current, 0);
-                const completedCount = campaigns.filter(c => c.status === 'completed' || c.status === 'ordered').length;
-                return { total, fee: Math.floor(total * 0.1), shipping: completedCount * 500 };
+                return { total, fee: Math.floor(total * 0.1), shipping: campaigns.filter(c => c.status === 'completed' || c.status === 'ordered').length * 500 };
             }, [campaigns]);
 
             const handleLogin = () => {
                 if (loginEmail === "y.moz.fleet@gmail.com" && loginPass === "Rushers1#") {
-                    setIsAdminMode(true);
-                    setView('admin');
-                    setShowLogin(false);
-                    setLoginEmail("");
-                    setLoginPass("");
-                } else {
-                    alert("アクセスコードまたはメールアドレスが間違っています");
-                }
+                    setIsAdminMode(true); setView('admin'); setShowLogin(false); setLoginEmail(""); setLoginPass("");
+                } else { alert("認証エラー"); }
             };
 
             const handleCustomAmountChange = (e) => {
-                const val = e.target.value;
-                setCustomAmountInput(val);
-                setSelectedAmount(parseInt(val) || 0);
+                setCustomAmountInput(e.target.value);
+                setSelectedAmount(parseInt(e.target.value) || 0);
             };
 
             const shareUrl = "https://mysupporter.example.com"; 
-            const shareText = (c) => encodeURIComponent(`【MySupporter】${c.team}の「${c.name}」を応援しよう！未来のアスリートを支援。`);
-            
-            const copyToClipboard = () => {
-                navigator.clipboard.writeText(shareUrl + " " + decodeURIComponent(shareText(selectedCampaign))).then(() => alert("リンクとテキストをコピーしました！Instagramなどに貼り付けてください。"));
+            const shareText = (c) => encodeURIComponent(`【MySupporter】${c.team}の「${c.name}」を応援しよう！`);
+            const copyToClipboard = () => navigator.clipboard.writeText(shareUrl).then(() => alert("リンクをコピーしました"));
+
+            // フィルタリング
+            const filteredCampaigns = useMemo(() => {
+                return campaigns.filter(c => {
+                    const matchSearch = searchQuery === "" || c.team.toLowerCase().includes(searchQuery.toLowerCase()) || c.name.toLowerCase().includes(searchQuery.toLowerCase());
+                    const isActiveOrCompleted = c.status === 'active' || c.status === 'completed';
+                    return matchSearch && isActiveOrCompleted;
+                }).sort((a, b) => {
+                    const aIsGoal = a.current >= calcTarget(a.price);
+                    const bIsGoal = b.current >= calcTarget(b.price);
+                    if (aIsGoal && !bIsGoal) return 1;
+                    if (!aIsGoal && bIsGoal) return -1;
+                    return b.supporters - a.supporters; 
+                });
+            }, [campaigns, searchQuery]);
+
+            // ▼▼▼ サーバーへの書き込み処理 ▼▼▼
+            const submitRequest = async () => {
+                if(!applyForm.team || !applyForm.email) { alert("必須項目を入力してください"); return; }
+                if(!applyAgreed){ alert("規約への同意が必要です"); return; }
+                await db.collection("requests").add({ ...applyForm, estimatedPrice: 0, status: "pending", date: new Date().toLocaleDateString('ja-JP') });
+                alert("リクエストを送信しました");
+                setView('home');
             };
+
+            const approveRequest = async (req) => {
+                if (!req.estimatedPrice || req.estimatedPrice <= 0) { alert("金額を入力してください"); return; }
+                await db.collection("campaigns").add({
+                    ...req, name: "新規募集商品 (編集してください)", category: "未設定",
+                    price: req.estimatedPrice, current: 0, supporters: 0, status: 'active', month: new Date().toISOString().slice(0, 7)
+                });
+                await db.collection("requests").doc(req.id).delete();
+                alert("承認し、募集を開始しました");
+            };
+
+            const completeSupport = async () => {
+                const newCurrent = selectedCampaign.current + selectedAmount;
+                const target = calcTarget(selectedCampaign.price);
+                const newStatus = newCurrent >= target ? 'completed' : selectedCampaign.status;
+                await db.collection("campaigns").doc(selectedCampaign.id).update({
+                    current: newCurrent,
+                    supporters: (selectedCampaign.supporters || 0) + 1,
+                    status: newStatus
+                });
+                alert("ご支援ありがとうございました！");
+                setView('home');
+            };
+
+            const updateCampaign = async (id, data) => await db.collection("campaigns").doc(id).update(data);
+            const deleteCampaign = async (id) => { if(confirm("削除しますか？")) await db.collection("campaigns").doc(id).delete(); };
+            const deleteRequest = async (id) => await db.collection("requests").doc(id).delete();
+            const updateOrderStatus = async (id, status) => { if(confirm("ステータスを更新しますか？")) await db.collection("campaigns").doc(id).update({ status }); };
+
+            const seedData = async () => {
+                if(!confirm("データベースに初期データを投入しますか？")) return;
+                const initCamps = [
+                    { team: "東京サッカーアカデミー", category: "サッカー", name: "公式試合球 10個セット", price: 58000, current: 42000, supporters: 24, email: "contact@tsa.example.com", teamUrl: "https://example.com", snsUrl: "https://twitter.com/example", image: "https://images-na.ssl-images-amazon.com/images/I/81xU7z9E4DL._AC_SL1500_.jpg", status: "active", month: "2026-01", description: "全国大会に向けた練習の質を上げるため、公式球が必要です。" },
+                    { team: "品川ライオンズ", category: "野球", name: "トレーニング用ミニハードル", price: 8500, current: 10000, supporters: 8, email: "info@lions.example.com", teamUrl: "", snsUrl: "", image: "https://m.media-amazon.com/images/I/71m6i-V8NXL._AC_SL1500_.jpg", status: "completed", month: "2026-01", description: "冬のトレーニング期間における基礎体力向上のため。" }
+                ];
+                initCamps.forEach(c => db.collection("campaigns").add(c));
+                alert("初期データを投入しました");
+            };
+            // ▲▲▲▲▲▲
 
             return (
                 <div className="min-h-screen flex flex-col relative">
@@ -239,41 +280,32 @@
                             <div className="bg-orange-600 w-10 h-10 rounded-xl flex items-center justify-center italic font-black text-white shadow-lg text-xl">S</div>
                             <span className="font-black text-2xl tracking-tighter uppercase italic text-white hidden sm:block">MySupporter</span>
                         </div>
-                        
                         {!isAdminMode && (
                             <div className="flex-1 max-w-md mx-4 relative hidden md:block">
-                                <input 
-                                    type="text" 
-                                    placeholder="チーム名や商品で検索..." 
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-white/10 border border-white/10 rounded-full py-2 px-10 text-xs font-bold text-white focus:border-orange-500 outline-none transition"
-                                />
+                                <input type="text" placeholder="チーム名や商品で検索..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/10 border border-white/10 rounded-full py-2 px-10 text-xs font-bold text-white focus:border-orange-500 outline-none transition" />
                                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</div>
                             </div>
                         )}
-
                         <div className="flex gap-4">
                             {!isAdminMode && (
                                 <div className="hidden lg:flex bg-white/5 p-1 rounded-full border border-white/10 mr-4">
                                     {['campaigns', 'howitworks', 'thanks'].map(tab => (
-                                        <button key={tab} onClick={() => {setView('home'); setActiveTab(tab);}} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-                                            {tab === 'campaigns' ? '支援募集' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
-                                        </button>
+                                        <button key={tab} onClick={() => {setView('home'); setActiveTab(tab);}} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>{tab === 'campaigns' ? '支援募集' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}</button>
                                     ))}
                                 </div>
                             )}
                             <button onClick={() => {setView('apply'); setIsAdminMode(false);}} className="text-[10px] font-black uppercase border border-white/20 px-6 py-2 rounded-full hover:bg-white hover:text-black transition whitespace-nowrap">掲載リクエスト</button>
-                            {isAdminMode && (
-                                <button onClick={() => {setIsAdminMode(false); setView('home');}} className="text-[10px] font-black bg-red-600 text-white px-6 py-2 rounded-full uppercase whitespace-nowrap">ログアウト</button>
-                            )}
+                            {isAdminMode && (<button onClick={() => {setIsAdminMode(false); setView('home');}} className="text-[10px] font-black bg-red-600 text-white px-6 py-2 rounded-full uppercase whitespace-nowrap">ログアウト</button>)}
                         </div>
                     </nav>
 
                     <main className="flex-grow">
                         {view === 'admin' && isAdminMode ? (
                             <div className="max-w-7xl mx-auto p-12 fade-in">
-                                <h2 className="text-4xl font-black italic text-orange-500 uppercase mb-8 tracking-tighter">管理者ダッシュボード</h2>
+                                <div className="flex justify-between items-end border-b border-white/10 pb-8 mb-8">
+                                    <h2 className="text-4xl font-black italic text-orange-500 uppercase tracking-tighter">管理者ダッシュボード</h2>
+                                    <button onClick={seedData} className="text-[10px] text-slate-500 hover:text-white underline">初期データを投入(テスト用)</button>
+                                </div>
                                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 mb-12 gap-2 overflow-x-auto">
                                     <button onClick={() => setAdminTab('requests')} className={`admin-tab ${adminTab === 'requests' ? 'active' : 'text-slate-500'}`}>リクエスト管理</button>
                                     <button onClick={() => setAdminTab('campaigns')} className={`admin-tab ${adminTab === 'campaigns' ? 'active' : 'text-slate-500'}`}>募集編集</button>
@@ -282,144 +314,92 @@
                                     <button onClick={() => setAdminTab('revenue')} className={`admin-tab ${adminTab === 'revenue' ? 'active' : 'text-slate-500'}`}>収益管理</button>
                                 </div>
                                 
-                                {/* リクエスト管理 (② URL表示追加) */}
                                 {adminTab === 'requests' && (
                                     <div className="grid gap-6">
-                                        {requests.length === 0 && <p className="text-center text-slate-500">現在リクエストはありません</p>}
                                         {requests.map(req => (
                                             <div key={req.id} className="glass-panel p-8 rounded-[2rem] grid grid-cols-1 md:grid-cols-3 gap-8 border-l-8 border-orange-600">
                                                 <div className="space-y-4">
-                                                    <div className="aspect-video bg-white/5 rounded-2xl overflow-hidden relative group border border-dashed border-white/20 flex items-center justify-center">
-                                                        {req.image ? <img src={req.image} className="w-full h-full object-cover" /> : <span className="text-[10px] font-bold text-slate-500">画像未設定</span>}
-                                                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, (res) => setRequests(requests.map(r => r.id === req.id ? {...r, image: res} : r)))} />
+                                                    <div className="aspect-video bg-white/5 rounded-2xl overflow-hidden flex items-center justify-center relative group">
+                                                        {req.image ? <img src={req.image} className="w-full h-full object-cover" /> : <span className="text-slate-500 font-bold text-xs">画像未設定</span>}
+                                                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, (res) => updateCampaign(req.id, {image: res}))} />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <label className="text-[10px] font-bold text-slate-500 uppercase">楽天商品ソースコードから抽出</label>
-                                                        <textarea 
-                                                            className="input-field text-xs h-16 font-mono" 
-                                                            placeholder="<img src='...' > などのHTMLタグを貼り付け"
-                                                            value={rakutenCodes[req.id] || ""}
-                                                            onChange={(e) => setRakutenCodes({...rakutenCodes, [req.id]: e.target.value})}
-                                                        />
-                                                        <button 
-                                                            className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase transition"
-                                                            onClick={() => {
-                                                                const src = extractImageFromCode(rakutenCodes[req.id]);
-                                                                if(src) {
-                                                                    setRequests(requests.map(r => r.id === req.id ? {...r, image: src} : r));
-                                                                    alert("画像を抽出・設定しました");
-                                                                } else {
-                                                                    alert("画像URLが見つかりませんでした");
-                                                                }
-                                                            }}
-                                                        >
-                                                            画像を適用
-                                                        </button>
+                                                        <textarea className="input-field text-xs h-16 font-mono" placeholder="楽天コード" value={rakutenCodes[req.id] || ""} onChange={(e) => setRakutenCodes({...rakutenCodes, [req.id]: e.target.value})} />
+                                                        <button className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase" onClick={() => { const src = extractImageFromCode(rakutenCodes[req.id]); if(src) { setRequests(requests.map(r => r.id === req.id ? {...r, image: src} : r)); alert("画像設定"); } }}>画像適用</button>
                                                     </div>
-                                                    <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase">商品URL</label><input className="input-field text-blue-400 text-xs" value={req.itemUrl} onChange={(e) => setRequests(requests.map(r => r.id === req.id ? {...r, itemUrl: e.target.value} : r))} /><a href={req.itemUrl} target="_blank" className="text-[10px] text-orange-500 underline ml-1">リンクを確認</a></div>
+                                                    <a href={req.itemUrl} target="_blank" className="text-orange-500 text-xs font-bold underline block text-center">商品URL</a>
                                                 </div>
-                                                <div className="md:col-span-2 flex flex-col justify-between">
-                                                    <div className="space-y-4">
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div><label className="text-[10px] font-bold text-slate-500 uppercase">チーム名</label><input className="text-2xl font-black bg-transparent w-full outline-none border-b border-white/10 pb-2" value={req.team} onChange={(e) => setRequests(requests.map(r => r.id === req.id ? {...r, team: e.target.value} : r))} /></div>
-                                                            <div><label className="text-[10px] font-bold text-slate-500 uppercase">連絡先メール</label><input className="text-sm bg-transparent w-full outline-none border-b border-white/10 pb-2 text-slate-300" value={req.email} onChange={(e) => setRequests(requests.map(r => r.id === req.id ? {...r, email: e.target.value} : r))} /></div>
-                                                        </div>
-                                                        
-                                                        {/* チームURL・SNS (管理者確認用) */}
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div><label className="text-[10px] font-bold text-slate-500 uppercase">チームURL</label><div className="text-xs text-blue-400 truncate"><a href={req.teamUrl} target="_blank">{req.teamUrl || "未入力"}</a></div></div>
-                                                            <div><label className="text-[10px] font-bold text-slate-500 uppercase">SNS URL</label><div className="text-xs text-blue-400 truncate"><a href={req.snsUrl} target="_blank">{req.snsUrl || "未入力"}</a></div></div>
-                                                        </div>
-
-                                                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                                            <div className="flex justify-between items-center mb-2">
-                                                                <label className="text-[10px] font-bold text-orange-500 uppercase">商品価格 (税込)</label>
-                                                                <span className="text-[10px] text-slate-500">※URL等を確認して入力</span>
-                                                            </div>
-                                                            <input type="number" className="input-field text-xl font-bold mb-3" placeholder="例: 15000" value={req.estimatedPrice || ''} onChange={(e) => setRequests(requests.map(r => r.id === req.id ? {...r, estimatedPrice: parseInt(e.target.value)} : r))} />
-                                                            {req.estimatedPrice > 0 && (
-                                                                <div className="text-xs space-y-1 text-slate-400 font-mono">
-                                                                    <div className="flex justify-between"><span>商品代金:</span><span>¥{req.estimatedPrice.toLocaleString()}</span></div>
-                                                                    <div className="flex justify-between"><span>送料・諸経費:</span><span>+¥500</span></div>
-                                                                    <div className="flex justify-between pb-1 border-b border-white/10"><span>システム手数料 (10%):</span><span>× 1.1</span></div>
-                                                                    <div className="flex justify-between text-white font-bold text-sm pt-1"><span>掲載目標金額:</span><span>¥{calcTarget(req.estimatedPrice).toLocaleString()}</span></div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">申請理由</label><textarea className="input-field h-24" value={req.description} onChange={(e) => setRequests(requests.map(r => r.id === req.id ? {...r, description: e.target.value} : r))} placeholder="申請理由" /></div>
-                                                    </div>
-                                                    <div className="flex gap-4 mt-8">
-                                                        <button onClick={() => {
-                                                            if (!req.estimatedPrice || req.estimatedPrice <= 0) { alert("金額を入力してください"); return; }
-                                                            // 承認時にteamUrl, snsUrlも引き継ぐ
-                                                            setCampaigns([...campaigns, { ...req, id: Date.now(), name: "新規募集商品 (編集してください)", category:"未設定", price: req.estimatedPrice, current: 0, status: 'active', month: new Date().toISOString().slice(0, 7), supporters: 0 }]);
-                                                            setRequests(requests.filter(r => r.id !== req.id));
-                                                            alert("承認し、募集を開始しました");
-                                                        }} className="flex-1 bg-orange-600 text-xs font-black py-4 rounded-xl uppercase hover:bg-orange-500 transition">承認して掲載 (金額確定)</button>
-                                                        <button onClick={() => setRequests(requests.filter(r => r.id !== req.id))} className="px-10 border border-white/10 text-xs font-black rounded-xl hover:bg-red-600 transition">削除</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                
-                                {/* 募集編集 (② URL編集欄追加) */}
-                                {adminTab === 'campaigns' && (
-                                    <div className="grid grid-cols-1 gap-4">
-                                        {campaigns.map(c => (
-                                            <div key={c.id} className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row items-center gap-6 border border-white/5">
-                                                <div className="w-32 shrink-0 space-y-2">
-                                                    <div className="w-full h-32 bg-white rounded-2xl p-2 relative overflow-hidden"><img src={c.image} className="w-full h-full object-contain" /><input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, (res) => setCampaigns(campaigns.map(item => item.id === c.id ? {...item, image: res} : item)))} /></div>
-                                                    <input className="input-field py-1 px-2 text-[10px] w-full" placeholder="楽天コード貼付" value={rakutenCodes[c.id] || ""} onChange={(e) => setRakutenCodes({...rakutenCodes, [c.id]: e.target.value})} />
-                                                    <button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={() => {const src = extractImageFromCode(rakutenCodes[c.id]); if(src) setCampaigns(campaigns.map(item => item.id === c.id ? {...item, image: src} : item));}}>画像抽出</button>
-                                                </div>
-                                                <div className="flex-grow space-y-4 w-full">
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                        <div><label className="text-[10px] font-black text-slate-500">チーム名</label><input className="input-field py-1 px-2 text-xs" value={c.team} onChange={(e) => setCampaigns(campaigns.map(i => i.id === c.id ? {...i, team: e.target.value} : i))} /></div>
-                                                        <div><label className="text-[10px] font-black text-slate-500">商品名</label><input className="input-field py-1 px-2 text-xs" value={c.name} onChange={(e) => setCampaigns(campaigns.map(i => i.id === c.id ? {...i, name: e.target.value} : i))} /></div>
-                                                        <div><label className="text-[10px] font-black text-slate-500">商品価格 (円)</label><input type="number" className="input-field py-1 px-2 text-xs text-orange-400" value={c.price} onChange={(e) => setCampaigns(campaigns.map(i => i.id === c.id ? {...i, price: parseInt(e.target.value)} : i))} /></div>
-                                                        <div><label className="text-[10px] font-black text-slate-500">目標金額</label><div className="text-sm font-black pt-2 text-white">¥{calcTarget(c.price).toLocaleString()}</div><div className="text-[9px] text-slate-500">手数料・送料込</div></div>
-                                                    </div>
-                                                    
-                                                    {/* URL編集欄の追加 */}
+                                                <div className="md:col-span-2 space-y-4">
+                                                    <h3 className="text-2xl font-black">{req.team}</h3>
                                                     <div className="grid grid-cols-2 gap-4">
-                                                        <div><label className="text-[10px] font-black text-slate-500">チームURL</label><input className="input-field py-1 px-2 text-xs" value={c.teamUrl || ""} onChange={(e) => setCampaigns(campaigns.map(i => i.id === c.id ? {...i, teamUrl: e.target.value} : i))} /></div>
-                                                        <div><label className="text-[10px] font-black text-slate-500">SNS URL</label><input className="input-field py-1 px-2 text-xs" value={c.snsUrl || ""} onChange={(e) => setCampaigns(campaigns.map(i => i.id === c.id ? {...i, snsUrl: e.target.value} : i))} /></div>
+                                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">チームURL</label><a href={req.teamUrl} target="_blank" className="text-xs text-blue-400 block truncate">{req.teamUrl || "未入力"}</a></div>
+                                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">SNS</label><a href={req.snsUrl} target="_blank" className="text-xs text-blue-400 block truncate">{req.snsUrl || "未入力"}</a></div>
                                                     </div>
-
-                                                    <div><label className="text-[10px] font-black text-slate-500">募集理由・背景</label><textarea className="input-field text-xs h-20" value={c.description || ''} onChange={(e) => setCampaigns(campaigns.map(i => i.id === c.id ? {...i, description: e.target.value} : i))} placeholder="募集の背景を入力してください"></textarea></div>
-                                                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-orange-500" style={{width: `${Math.min((c.current/calcTarget(c.price))*100, 100)}%`}}></div></div>
+                                                    <div className="bg-white/5 p-4 rounded-xl">
+                                                        <label className="text-[10px] font-bold text-orange-500 uppercase">承認金額 (税込)</label>
+                                                        <input type="number" className="input-field text-xl font-bold" placeholder="金額を入力" value={req.estimatedPrice || ''} onChange={(e) => { const newReqs = requests.map(r => r.id === req.id ? {...r, estimatedPrice: parseInt(e.target.value)} : r); setRequests(newReqs); }} />
+                                                    </div>
+                                                    <p className="text-sm text-slate-400">{req.description}</p>
+                                                    <div className="flex gap-4">
+                                                        <button onClick={() => approveRequest(req)} className="flex-1 bg-orange-600 py-3 rounded-xl font-black text-xs uppercase hover:bg-orange-500">承認して掲載</button>
+                                                        <button onClick={() => deleteRequest(req.id)} className="px-8 border border-white/10 rounded-xl font-black text-xs hover:bg-red-600">削除</button>
+                                                    </div>
                                                 </div>
-                                                <button onClick={() => {if(confirm("削除しますか？")) setCampaigns(campaigns.filter(i => i.id !== c.id))}} className="text-xs font-black border border-white/10 px-4 py-2 rounded-lg hover:bg-red-600 uppercase shrink-0">削除</button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-                                
-                                {adminTab === 'orders' && (<div className="space-y-6"><div className="glass-panel p-6 rounded-2xl bg-orange-600/10 border-orange-600/30"><h3 className="text-lg font-black italic uppercase">発注待ちリスト</h3><p className="text-xs text-slate-400">目標金額を達成したプロジェクトが表示されます。発注を行ってください。</p></div>{campaigns.filter(c => c.current >= calcTarget(c.price) && c.status !== 'ordered').map(c => (<div key={c.id} className="glass-panel p-8 rounded-[2rem] flex flex-col md:flex-row items-center gap-8 border-l-8 border-green-500"><div className="w-32 h-32 bg-white rounded-2xl p-4 shrink-0 flex items-center justify-center"><img src={c.image} className="max-h-full object-contain" /></div><div className="flex-grow space-y-2"><div className="flex items-center gap-3"><span className="bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded">達成済み</span><span className="text-xs font-bold text-slate-400">ID: {c.id}</span></div><h3 className="text-2xl font-black italic">{c.team}</h3><p className="text-lg font-bold">{c.name}</p><div className="flex gap-6 mt-2 text-sm text-slate-300"><div><span className="text-[10px] uppercase text-slate-500 block">連絡先</span>{c.email || '未登録'}</div><div><span className="text-[10px] uppercase text-slate-500 block">商品価格</span>¥{c.price.toLocaleString()}</div><div><span className="text-[10px] uppercase text-slate-500 block">達成金額</span>¥{c.current.toLocaleString()}</div></div></div><div className="flex flex-col gap-2 shrink-0 w-full md:w-auto"><button onClick={() => window.open(c.itemUrl || 'https://amazon.co.jp', '_blank')} className="px-6 py-3 border border-white/20 rounded-xl text-xs font-black uppercase hover:bg-white hover:text-black transition">商品ページを開く</button><button onClick={() => {if(confirm("発注完了としてマークしますか？")) {setCampaigns(campaigns.map(item => item.id === c.id ? {...item, status: 'ordered'} : item));}}} className="px-6 py-3 bg-green-500 text-black rounded-xl text-xs font-black uppercase hover:bg-green-400 transition shadow-lg shadow-green-500/20">発注完了にする</button></div></div>))}</div>)}
-                                {adminTab === 'reports' && (<div className="space-y-8"><div className="glass-panel p-10 rounded-[3rem] border border-orange-500/20"><h3 className="text-lg font-black italic mb-8 uppercase">活動報告の新規作成</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div className="space-y-4"><input className="input-field" placeholder="対象チーム名" id="rep-team" /><input className="input-field" placeholder="タイトル" id="rep-title" /><div className="h-40 border-2 border-dashed border-white/10 rounded-2xl flex items-center justify-center relative hover:border-orange-500 transition cursor-pointer"><span className="text-[10px] font-black text-slate-500">画像をアップロード</span><input type="file" className="absolute inset-0 opacity-0 cursor-pointer" id="rep-img" /></div></div><textarea className="input-field h-full" placeholder="報告本文..." id="rep-content"></textarea></div><button className="w-full mt-8 bg-white text-black py-4 rounded-2xl font-black uppercase text-sm" onClick={() => {const newRep = { id: Date.now(), team: document.getElementById('rep-team').value, title: document.getElementById('rep-title').value, content: document.getElementById('rep-content').value, date: new Date().toLocaleDateString('ja-JP'), image: null }; setReports([newRep, ...reports]); alert("報告を公開しました");}}>公開する</button></div></div>)}
-                                {adminTab === 'revenue' && (<div className="space-y-12"><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div className="glass-panel p-8 rounded-[2rem] border-t-4 border-orange-600"><p className="text-xs font-black text-slate-500 mb-2">総支援額</p><p className="text-4xl font-black italic">¥{stats.total.toLocaleString()}</p></div><div className="glass-panel p-8 rounded-[2rem]"><p className="text-xs font-black text-slate-500 mb-2">手数料収益 (10%)</p><p className="text-4xl font-black italic text-orange-500">¥{stats.fee.toLocaleString()}</p></div><div className="glass-panel p-8 rounded-[2rem]"><p className="text-xs font-black text-slate-500 mb-2">送料プール</p><p className="text-4xl font-black italic text-white">¥{stats.shipping.toLocaleString()}</p></div></div></div>)}
+
+                                {adminTab === 'campaigns' && (
+                                    <div className="grid gap-4">
+                                        {campaigns.map(c => (
+                                            <div key={c.id} className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center">
+                                                <div className="w-32 shrink-0 space-y-2">
+                                                    <div className="w-full h-32 bg-white rounded-2xl p-2 relative overflow-hidden"><img src={c.image} className="w-full h-full object-contain" /><input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, (res) => updateCampaign(c.id, {image: res}))} /></div>
+                                                    <input className="input-field py-1 px-2 text-[10px] w-full" placeholder="楽天コード" value={rakutenCodes[c.id] || ""} onChange={(e) => setRakutenCodes({...rakutenCodes, [c.id]: e.target.value})} />
+                                                    <button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={() => { const src = extractImageFromCode(rakutenCodes[c.id]); if(src) updateCampaign(c.id, {image: src}); }}>画像抽出</button>
+                                                </div>
+                                                <div className="flex-grow grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                                                    <div><label className="text-[10px] text-slate-500 font-bold">チーム名</label><input className="input-field py-1 px-2 text-xs" value={c.team} onChange={(e) => updateCampaign(c.id, {team: e.target.value})} /></div>
+                                                    <div><label className="text-[10px] text-slate-500 font-bold">商品名</label><input className="input-field py-1 px-2 text-xs" value={c.name} onChange={(e) => updateCampaign(c.id, {name: e.target.value})} /></div>
+                                                    <div><label className="text-[10px] text-slate-500 font-bold">価格</label><input className="input-field py-1 px-2 text-xs" type="number" value={c.price} onChange={(e) => updateCampaign(c.id, {price: parseInt(e.target.value)})} /></div>
+                                                    <div><label className="text-[10px] text-slate-500 font-bold">URL設定</label>
+                                                        <input className="input-field py-1 px-2 text-[10px] mb-1" placeholder="Team URL" value={c.teamUrl || ""} onChange={(e) => updateCampaign(c.id, {teamUrl: e.target.value})} />
+                                                        <input className="input-field py-1 px-2 text-[10px]" placeholder="SNS URL" value={c.snsUrl || ""} onChange={(e) => updateCampaign(c.id, {snsUrl: e.target.value})} />
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => deleteCampaign(c.id)} className="text-xs font-black border border-white/10 px-4 py-2 rounded-lg hover:bg-red-600">削除</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {adminTab === 'orders' && (
+                                    <div className="space-y-6">
+                                        {campaigns.filter(c => c.current >= calcTarget(c.price) && c.status !== 'ordered').map(c => (
+                                            <div key={c.id} className="glass-panel p-8 rounded-[2rem] flex flex-col md:flex-row items-center gap-8 border-l-8 border-green-500">
+                                                <div className="flex-grow space-y-2">
+                                                    <span className="bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded">達成済み</span>
+                                                    <h3 className="text-2xl font-black italic">{c.team} - {c.name}</h3>
+                                                    <div className="flex gap-4 text-xs text-slate-400">
+                                                        <a href={c.itemUrl} target="_blank" className="underline hover:text-white">商品ページ</a>
+                                                        <span>連絡先: {c.email}</span>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => updateOrderStatus(c.id, 'ordered')} className="px-6 py-3 bg-green-500 text-black rounded-xl text-xs font-black uppercase hover:bg-green-400">発注完了にする</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ) : view === 'home' ? (
-                            /* ================= ユーザー表示 (省略なし) ================= */
                             <>
                                 {activeTab === 'campaigns' && (
                                     <>
                                         <section className="pt-32 pb-24 px-8 text-center fade-in">
                                             <h1 className="text-7xl md:text-[9rem] font-black italic tracking-tighter uppercase leading-[0.85] text-white">Support Your<br/><span className="text-orange-600">Dream Team.</span></h1>
                                             <p className="text-xl md:text-3xl font-black text-slate-300 mt-8 tracking-widest">そのワンクリックが、未来のアスリートの力になる。</p>
-                                            
-                                            <div className="max-w-md mx-auto mt-12 md:hidden">
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="チーム名や商品で検索..." 
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    className="w-full bg-white/10 border border-white/10 rounded-full py-4 px-8 text-sm font-bold text-white focus:border-orange-500 outline-none transition"
-                                                />
-                                            </div>
-
+                                            <div className="max-w-md mx-auto mt-12 md:hidden"><input type="text" placeholder="チーム名や商品で検索..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/10 border border-white/10 rounded-full py-4 px-8 text-sm font-bold text-white focus:border-orange-500 outline-none transition" /></div>
                                             <div className="w-24 h-2 bg-orange-600 mx-auto mt-16"></div>
                                         </section>
                                         <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
@@ -427,29 +407,16 @@
                                                 const target = calcTarget(c.price);
                                                 const progress = Math.min((c.current / target) * 100, 100);
                                                 const isGoal = c.current >= target;
-
                                                 return (
                                                     <div key={c.id} className="campaign-card glass-panel rounded-[2.5rem] overflow-hidden cursor-pointer p-2 border border-white/5 relative" onClick={() => {setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
-                                                        {isGoal && (
-                                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 pointer-events-none rounded-[2.5rem]">
-                                                                <div className="border-8 border-orange-500 text-orange-500 text-6xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg]">GOAL!!</div>
-                                                            </div>
-                                                        )}
-
-                                                        <div className="aspect-square bg-white rounded-[2rem] p-12 flex items-center justify-center m-2 relative">
-                                                            <img src={c.image} className="max-h-full object-contain" />
-                                                        </div>
+                                                        {isGoal && (<div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 pointer-events-none rounded-[2.5rem]"><div className="border-8 border-orange-500 text-orange-500 text-6xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg]">GOAL!!</div></div>)}
+                                                        <div className="aspect-square bg-white rounded-[2rem] p-12 flex items-center justify-center m-2 relative"><img src={c.image} className="max-h-full object-contain" /></div>
                                                         <div className="p-8">
-                                                            <span className="inline-block bg-white text-black px-4 py-1 rounded-full text-sm font-black mb-3 shadow-lg">
-                                                                {c.team}
-                                                            </span>
+                                                            <span className="inline-block bg-white text-black px-4 py-1 rounded-full text-sm font-black mb-3 shadow-lg">{c.team}</span>
                                                             <h3 className="text-xl font-black italic uppercase tracking-tighter text-white h-14 line-clamp-2 leading-none mb-6">{c.name}</h3>
                                                             <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-400"><span className="text-orange-500">👤</span> {c.supporters || 0}人が支援中</div>
                                                             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4"><div className="h-full progress-glow" style={{width: `${progress}%`}}></div></div>
-                                                            <div className="flex justify-between items-end">
-                                                                <div><p className="text-[10px] font-black text-slate-500 uppercase mb-1">現在</p><span className="text-2xl font-black italic">¥{c.current.toLocaleString()}</span></div>
-                                                                <div className="text-right"><p className="text-[10px] font-black text-slate-500 uppercase mb-1">目標</p><span className="text-xs font-black italic">/ ¥{target.toLocaleString()}</span></div>
-                                                            </div>
+                                                            <div className="flex justify-between items-end"><div><p className="text-[10px] font-black text-slate-500 uppercase mb-1">現在</p><span className="text-2xl font-black italic">¥{c.current.toLocaleString()}</span></div><div className="text-right"><p className="text-[10px] font-black text-slate-500 uppercase mb-1">目標</p><span className="text-xs font-black italic">/ ¥{target.toLocaleString()}</span></div></div>
                                                         </div>
                                                     </div>
                                                 );
@@ -457,18 +424,8 @@
                                         </div>
                                     </>
                                 )}
-                                {activeTab === 'howitworks' && (
-                                    <div className="max-w-6xl mx-auto py-20 px-8 fade-in">
-                                        <div className="text-center mb-16"><h2 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-orange-500">ご利用の流れ</h2><p className="text-slate-500 font-bold">簡単3ステップで支援完了</p></div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">{[ {step: "01", title: "リクエスト", text: "チームが必要な商品をAmazon等から選び、事務局へ申請します。"}, {step: "02", title: "支援募集", text: "サポーターがプロジェクトに共感し、少額から支援を行います。"}, {step: "03", title: "商品お届け", text: "目標金額に達すると、事務局が商品を購入しチームへ配送します。"} ].map((s, i) => (<div key={i} className="glass-panel p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/50 transition"><div className="text-8xl font-black italic text-white/5 absolute -top-4 -right-4">{s.step}</div><h3 className="text-2xl font-black italic mb-4 text-orange-500">{s.title}</h3><p className="text-sm text-slate-300 font-bold leading-relaxed">{s.text}</p></div>))}</div>
-                                    </div>
-                                )}
-                                {activeTab === 'thanks' && (
-                                    <div className="max-w-4xl mx-auto py-20 px-8 fade-in">
-                                        <h2 className="text-center text-3xl font-black italic uppercase mb-12 tracking-tighter text-orange-500">活動報告</h2>
-                                        <div className="space-y-8">{reports.map(rep => (<div key={rep.id} className="glass-panel p-8 rounded-[2rem] flex gap-8 items-start"><div className="w-32 h-32 bg-white/10 rounded-2xl shrink-0"></div><div><p className="text-[10px] font-black text-slate-500 mb-2">{rep.date} | {rep.team}</p><h3 className="text-xl font-black italic mb-4">{rep.title}</h3><p className="text-sm text-slate-400 font-bold">{rep.content}</p></div></div>))}</div>
-                                    </div>
-                                )}
+                                {activeTab === 'howitworks' && (<div className="max-w-6xl mx-auto py-20 px-8 fade-in"><div className="text-center mb-16"><h2 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-orange-500">ご利用の流れ</h2><p className="text-slate-500 font-bold">簡単3ステップで支援完了</p></div><div className="grid grid-cols-1 md:grid-cols-3 gap-8">{[ {step: "01", title: "リクエスト", text: "チームが必要な商品をAmazon等から選び、事務局へ申請します。"}, {step: "02", title: "支援募集", text: "サポーターがプロジェクトに共感し、少額から支援を行います。"}, {step: "03", title: "商品お届け", text: "目標金額に達すると、事務局が商品を購入しチームへ配送します。"} ].map((s, i) => (<div key={i} className="glass-panel p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/50 transition"><div className="text-8xl font-black italic text-white/5 absolute -top-4 -right-4">{s.step}</div><h3 className="text-2xl font-black italic mb-4 text-orange-500">{s.title}</h3><p className="text-sm text-slate-300 font-bold leading-relaxed">{s.text}</p></div>))}</div></div>)}
+                                {activeTab === 'thanks' && (<div className="max-w-4xl mx-auto py-20 px-8 fade-in"><h2 className="text-center text-3xl font-black italic uppercase mb-12 tracking-tighter text-orange-500">活動報告</h2><div className="space-y-8">{reports.map(rep => (<div key={rep.id} className="glass-panel p-8 rounded-[2rem] flex gap-8 items-start"><div className="w-32 h-32 bg-white/10 rounded-2xl shrink-0"></div><div><p className="text-[10px] font-black text-slate-500 mb-2">{rep.date} | {rep.team}</p><h3 className="text-xl font-black italic mb-4">{rep.title}</h3><p className="text-sm text-slate-400 font-bold">{rep.content}</p></div></div>))}</div></div>)}
                             </>
                         ) : view === 'detail' ? (
                             <div className="max-w-6xl mx-auto p-4 md:p-12 fade-in pb-40">
@@ -476,130 +433,20 @@
                                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-16">
                                     <div className="lg:col-span-3">
                                         <div className="glass-panel p-8 md:p-10 rounded-[3rem] border-t-8 border-orange-600 relative overflow-hidden">
-                                            {selectedCampaign.current >= calcTarget(selectedCampaign.price) && (
-                                                <div className="absolute top-10 right-10 z-20 pointer-events-none">
-                                                    <div className="border-8 border-orange-500 text-orange-500 text-5xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg] opacity-50">GOAL!!</div>
-                                                </div>
-                                            )}
-                                            
+                                            {selectedCampaign.current >= calcTarget(selectedCampaign.price) && (<div className="absolute top-10 right-10 z-20 pointer-events-none"><div className="border-8 border-orange-500 text-orange-500 text-5xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg] opacity-50">GOAL!!</div></div>)}
                                             <span className="inline-block bg-white text-black px-4 py-1 rounded-full text-sm font-black mb-4 shadow-lg">{selectedCampaign.team}</span>
                                             <h2 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter leading-none mb-4">{selectedCampaign.name}</h2>
                                             <div className="mb-8 flex items-center gap-2"><span className="bg-orange-600/20 text-orange-500 px-3 py-1 rounded-full text-xs font-black">👤 {selectedCampaign.supporters || 0} Supporters</span><span className="text-slate-400 text-xs font-bold">が応援中</span></div>
                                             <div className="aspect-square bg-white rounded-3xl p-16 flex items-center justify-center relative"><img src={selectedCampaign.image} className="max-h-full object-contain" /></div>
-                                            <div className="mt-12 pt-8 border-t border-white/10">
-                                                <h4 className="text-sm font-black text-orange-500 uppercase mb-4 tracking-widest">Why we need this</h4>
-                                                <p className="text-slate-300 font-bold leading-relaxed whitespace-pre-wrap">{selectedCampaign.description || "このプロジェクトへの熱い想いがここに表示されます。"}</p>
-                                            </div>
-                                            
-                                            <div className="mt-12 pt-8 border-t border-white/10">
-                                                <h4 className="text-sm font-black text-slate-500 uppercase mb-6 tracking-widest text-center">このプロジェクトをシェアする</h4>
-                                                <div className="flex justify-center gap-4">
-                                                    <a href={`https://twitter.com/intent/tweet?text=${shareText(selectedCampaign)}&url=${shareUrl}`} target="_blank" className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white border border-white/20 hover:border-orange-500 transition"><svg fill="currentColor" width="20" height="20" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
-                                                    <a href={`https://social-plugins.line.me/lineit/share?url=${shareUrl}`} target="_blank" className="w-12 h-12 bg-[#06C755] rounded-full flex items-center justify-center text-white hover:opacity-90 transition"><svg fill="currentColor" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.56 2 10.12c0 2.42 1.25 4.57 3.32 6.09.43.32.32.85.2 1.35-.15.63-.53 1.74-.55 1.83 0 0-.1.39.2.53.31.15.86.04 3.59-1.44 3.25.93 6.77.27 3.24.27 5.52 0 10-3.56 10-8.12S17.52 2 12 2z"/></svg></a>
-                                                    <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" className="w-12 h-12 bg-[#1877F2] rounded-full flex items-center justify-center text-white hover:opacity-90 transition"><svg fill="currentColor" width="24" height="24" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
-                                                    <button onClick={copyToClipboard} className="w-12 h-12 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 rounded-full flex items-center justify-center text-white hover:scale-105 transition"><svg fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></button>
-                                                </div>
-                                            </div>
+                                            <div className="mt-12 pt-8 border-t border-white/10"><h4 className="text-sm font-black text-orange-500 uppercase mb-4 tracking-widest">Why we need this</h4><p className="text-slate-300 font-bold leading-relaxed whitespace-pre-wrap">{selectedCampaign.description || "このプロジェクトへの熱い想いがここに表示されます。"}</p></div>
+                                            <div className="mt-12 pt-8 border-t border-white/10"><h4 className="text-sm font-black text-slate-500 uppercase mb-6 tracking-widest text-center">このプロジェクトをシェアする</h4><div className="flex justify-center gap-4"><button onClick={copyToClipboard} className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-orange-600 transition">Copy Link</button></div></div>
                                         </div>
                                     </div>
                                     <div className="lg:col-span-2">
                                         <div className="glass-panel p-6 rounded-[2rem] border border-white/10 h-fit sticky top-24">
-                                            {supportStep === 1 && (
-                                                <div className="space-y-4 fade-in">
-                                                    <h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 1: 金額を選択</h3>
-                                                    {(() => {
-                                                        const target = calcTarget(selectedCampaign.price);
-                                                        const remaining = target - selectedCampaign.current;
-                                                        
-                                                        if (remaining <= 0) return (
-                                                            <div className="py-10 text-center">
-                                                                <div className="text-4xl mb-2">🎉</div>
-                                                                <p className="text-xl font-black text-white">Target Reached!</p>
-                                                                <p className="text-xs text-slate-400 mt-2">このプロジェクトは目標を達成しました。<br/>ご支援ありがとうございました。</p>
-                                                            </div>
-                                                        );
-
-                                                        return (
-                                                            <>
-                                                                <div className="text-center bg-white/5 rounded-xl p-4">
-                                                                    <p className="text-[10px] text-slate-500 font-bold uppercase">あと</p>
-                                                                    <p className="text-3xl font-black italic text-white">¥{remaining.toLocaleString()}</p>
-                                                                    <p className="text-[10px] text-slate-500 font-bold uppercase">でゴール達成</p>
-                                                                </div>
-
-                                                                <button onClick={() => {setSelectedAmount(remaining); setSupportStep(2);}} className="w-full py-4 bg-white text-black rounded-xl font-black text-sm italic uppercase shadow-lg hover:scale-[1.02] transition flex justify-between px-6 items-center">
-                                                                    <span className="text-xs text-slate-500">全額支援してゴール</span>
-                                                                    <span>¥{remaining.toLocaleString()}</span>
-                                                                </button>
-                                                                
-                                                                <div className="grid grid-cols-3 gap-2">
-                                                                    {[1000, 3000, 5000].map(v => (
-                                                                        <button 
-                                                                            key={v} 
-                                                                            disabled={v > remaining}
-                                                                            onClick={() => {setSelectedAmount(v); setSupportStep(2);}} 
-                                                                            className={`py-3 border rounded-xl font-black italic text-sm transition ${v > remaining ? 'bg-white/5 border-white/5 text-slate-600 cursor-not-allowed' : 'bg-white/5 border-white/10 hover:border-orange-500'}`}
-                                                                        >
-                                                                            ¥{v.toLocaleString()}
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                                
-                                                                <div className="pt-4 border-t border-white/10 space-y-2">
-                                                                    <p className="text-[10px] font-bold text-slate-400 text-center uppercase">または金額を指定</p>
-                                                                    <div className="flex gap-2">
-                                                                        <input 
-                                                                            type="number" 
-                                                                            className="input-field text-center font-black" 
-                                                                            placeholder={`¥ 1,000 ~ ${remaining}`} 
-                                                                            value={customAmountInput} 
-                                                                            onChange={handleCustomAmountChange} 
-                                                                            max={remaining}
-                                                                        />
-                                                                        <button 
-                                                                            onClick={() => {
-                                                                                let val = parseInt(customAmountInput);
-                                                                                if(val > remaining) val = remaining; 
-                                                                                setSelectedAmount(val); 
-                                                                                setSupportStep(2);
-                                                                            }} 
-                                                                            disabled={!customAmountInput || parseInt(customAmountInput) < 1000}
-                                                                            className={`px-4 rounded-xl font-black text-xs uppercase transition whitespace-nowrap ${!customAmountInput || parseInt(customAmountInput) < 1000 ? 'bg-white/5 text-slate-500 cursor-not-allowed' : 'bg-orange-600 text-white hover:bg-orange-500'}`}
-                                                                        >
-                                                                            決定
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </>
-                                                        );
-                                                    })()}
-                                                </div>
-                                            )}
-                                            {supportStep === 2 && (
-                                                <div className="space-y-4 fade-in">
-                                                    <h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 2: 情報登録</h3>
-                                                    <div className="text-center text-2xl font-black italic text-white py-2 border-b border-white/10">¥{selectedAmount.toLocaleString()}</div>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <input className="input-field" placeholder="お名前" />
-                                                        <input className="input-field" placeholder="年齢" type="number" />
-                                                    </div>
-                                                    <input className="input-field" placeholder="メールアドレス" type="email" />
-                                                    <button onClick={() => setSupportStep(3)} className="w-full py-4 bg-orange-600 rounded-xl font-black text-lg italic uppercase hover:bg-orange-500 transition shadow-lg mt-2">次へ進む</button>
-                                                    <button onClick={() => setSupportStep(1)} className="w-full text-[10px] font-black uppercase text-slate-500 text-center">戻る</button>
-                                                </div>
-                                            )}
-                                            {supportStep === 3 && (
-                                                <div className="space-y-6 fade-in text-center py-4">
-                                                    <h3 className="text-lg font-black italic uppercase">Step 3: 決済</h3>
-                                                    <div className="p-4 bg-white/5 rounded-xl">
-                                                        <p className="text-slate-400 font-bold uppercase text-[10px] mb-2">Total Amount</p>
-                                                        <p className="text-3xl font-black text-white">¥{selectedAmount.toLocaleString()}</p>
-                                                    </div>
-                                                    <p className="text-[10px] text-slate-500">Stripeで安全に決済されます</p>
-                                                    <button onClick={() => {alert("ご支援ありがとうございました！"); setView('home');}} className="w-full py-4 bg-orange-600 rounded-xl font-black text-xl italic uppercase shadow-xl hover:bg-orange-500 transition">決済を確定する</button>
-                                                    <button onClick={() => setSupportStep(2)} className="w-full text-[10px] font-black uppercase text-slate-500 text-center">戻る</button>
-                                                </div>
-                                            )}
+                                            {supportStep === 1 && (<div className="space-y-4 fade-in"><h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 1: 金額を選択</h3><div className="text-center bg-white/5 rounded-xl p-4"><p className="text-[10px] text-slate-500 font-bold uppercase">あと</p><p className="text-3xl font-black italic text-white">¥{(calcTarget(selectedCampaign.price) - selectedCampaign.current).toLocaleString()}</p><p className="text-[10px] text-slate-500 font-bold uppercase">でゴール達成</p></div><div className="grid grid-cols-3 gap-2">{[1000, 3000, 5000].map(v => <button key={v} onClick={() => {setSelectedAmount(v); setSupportStep(2);}} className="py-3 border rounded-xl font-black italic text-sm transition hover:border-orange-500">¥{v.toLocaleString()}</button>)}</div><div className="pt-4 border-t border-white/10 space-y-2"><p className="text-[10px] font-bold text-slate-400 text-center uppercase">または金額を指定</p><div className="flex gap-2"><input type="number" className="input-field text-center font-black" placeholder="¥ 1,000~" value={customAmountInput} onChange={handleCustomAmountChange} /><button onClick={() => {setSelectedAmount(parseInt(customAmountInput)); setSupportStep(2);}} className="px-4 rounded-xl font-black text-xs uppercase transition bg-orange-600 text-white">決定</button></div></div></div>)}
+                                            {supportStep === 2 && (<div className="space-y-4 fade-in"><h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 2: 情報登録</h3><input className="input-field" placeholder="お名前" /><button onClick={() => setSupportStep(3)} className="w-full py-4 bg-orange-600 rounded-xl font-black text-lg italic uppercase hover:bg-orange-500 transition shadow-lg mt-2">次へ進む</button></div>)}
+                                            {supportStep === 3 && (<div className="space-y-6 fade-in text-center py-4"><h3 className="text-lg font-black italic uppercase">Step 3: 決済</h3><p className="text-[10px] text-slate-500">Stripeで安全に決済されます</p><button onClick={completeSupport} className="w-full py-4 bg-orange-600 rounded-xl font-black text-xl italic uppercase shadow-xl hover:bg-orange-500 transition">決済を確定する</button></div>)}
                                         </div>
                                     </div>
                                 </div>
@@ -631,7 +478,7 @@
                                     
                                     <div className="text-center">
                                         <p className="text-[10px] text-slate-400 font-bold mb-4">※審査・掲載までに数営業日必要となる場合がございます。</p>
-                                        <button onClick={() => { if(!applyForm.team || !applyForm.email) { alert("チーム名とメールアドレスは必須です"); return; } if(!applyAgreed){ alert("規約への同意が必要です"); return; } setRequests([...requests, { ...applyForm, id: Date.now(), estimatedPrice: 0, status: "pending", date: new Date().toLocaleDateString('ja-JP') }]); alert("リクエストを送信しました"); setView('home'); }} className={`w-full py-6 rounded-3xl font-black text-xl italic uppercase shadow-xl transition ${applyAgreed ? 'bg-orange-600 hover:bg-orange-500' : 'bg-white/10 text-slate-500 cursor-not-allowed'}`} disabled={!applyAgreed}>リクエストを送信</button>
+                                        <button onClick={submitRequest} className={`w-full py-6 rounded-3xl font-black text-xl italic uppercase shadow-xl transition ${applyAgreed ? 'bg-orange-600 hover:bg-orange-500' : 'bg-white/10 text-slate-500 cursor-not-allowed'}`} disabled={!applyAgreed}>リクエストを送信</button>
                                     </div>
                                 </div>
                             </div>
