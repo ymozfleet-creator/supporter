@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | Official Release</title>
+    <title>MySupporter | 最終完全版 (規約復元)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -35,7 +35,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // ▼▼▼ Firebase設定 ▼▼▼
+        // ▼▼▼ Firebase設定 (適用済み) ▼▼▼
         const firebaseConfig = {
             apiKey: "AIzaSyBc6n-8U-8SNcM1CcP4r9sKweAhLcWajNc",
             authDomain: "mysupporter-91816.firebaseapp.com",
@@ -54,7 +54,6 @@
 
         const { useState, useMemo, useEffect } = React;
 
-        // モーダルコンポーネント
         const LegalModal = ({ title, content, isOpen, onClose }) => {
             if (!isOpen) return null;
             return (
@@ -73,11 +72,9 @@
         };
 
         const App = () => {
-            // State: 管理者モード
+            // State
             const [isAdminMode, setIsAdminMode] = useState(() => localStorage.getItem("ms_isAdmin") === "true");
             const [view, setView] = useState(() => isAdminMode ? 'admin' : 'home'); 
-            
-            // State: 画面・データ
             const [activeTab, setActiveTab] = useState('campaigns'); 
             const [adminTab, setAdminTab] = useState('requests');
             const [searchQuery, setSearchQuery] = useState("");
@@ -91,7 +88,6 @@
             const [loginPass, setLoginPass] = useState("");
             const [rakutenCodes, setRakutenCodes] = useState({});
 
-            // フォーム (一時保存対応)
             const [applyForm, setApplyForm] = useState(() => {
                 const saved = localStorage.getItem("ms_applyForm");
                 return saved ? JSON.parse(saved) : { team: "", email: "", itemUrl: "", teamUrl: "", snsUrl: "", description: "", image: null };
@@ -100,16 +96,14 @@
                 const saved = localStorage.getItem("ms_reportForm");
                 return saved ? JSON.parse(saved) : { team: "", title: "", content: "", image: null };
             });
-            const [applyAgreed, setApplyAgreed] = useState(false);
 
-            // データ (Firebase同期)
+            const [applyAgreed, setApplyAgreed] = useState(false);
             const [campaigns, setCampaigns] = useState([]);
             const [requests, setRequests] = useState([]);
             const [reports, setReports] = useState([]);
 
             const calcTarget = (price) => Math.floor((price + 500) * 1.1);
 
-            // Firebase接続
             useEffect(() => {
                 const unsubC = db.collection("campaigns").onSnapshot(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
                 const unsubR = db.collection("requests").onSnapshot(snap => setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -117,15 +111,15 @@
                 return () => { unsubC(); unsubR(); unsubRep(); };
             }, []);
 
-            // 状態保存
             useEffect(() => {
                 localStorage.setItem("ms_isAdmin", isAdminMode);
                 if (!isAdminMode) setView('home'); 
             }, [isAdminMode]);
+
             useEffect(() => { localStorage.setItem("ms_applyForm", JSON.stringify(applyForm)); }, [applyForm]);
             useEffect(() => { localStorage.setItem("ms_reportForm", JSON.stringify(reportForm)); }, [reportForm]);
 
-            // 管理画面：入力安定化ロジック (Local Update + DB Save on Blur)
+            // 管理画面用：安全な保存処理
             const handleLocalUpdate = (id, field, value) => {
                 setCampaigns(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
             };
@@ -133,6 +127,7 @@
                 try { await db.collection("campaigns").doc(id).update({ [field]: value }); } 
                 catch(e) { console.error("Save failed", e); }
             };
+            
             const handleRequestLocalUpdate = (id, field, value) => {
                 setRequests(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
             };
@@ -141,36 +136,77 @@
                 catch(e) { console.error("Save failed", e); }
             };
 
-            // ▼▼▼ 法的文書（完全版） ▼▼▼
+            // ▼▼▼ 詳細な法的文書 (完全復元) ▼▼▼
             const docContent = {
                 terms: (
                     <div className="space-y-8">
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第1条（総則）</h3><p>本規約は、MySupporter運営事務局（以下「甲」）が提供する物品支援プラットフォーム「MySupporter」（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意の上、本サービスを利用するものとします。</p></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第2条（支援金の使途と仕組み）</h3><ul className="list-disc pl-5 space-y-2 text-slate-400"><li>本サービスは、サポーターからの支援金を原資として、甲がチームの希望する物品を代理購入し、配送するサービスです。</li><li>支援金には、物品代金のほか、システム利用料（10%）、配送・梱包等の事務手数料（一律500円）が含まれます。</li><li>目標金額に到達した時点で決済が確定し、物品の手配が行われます。</li></ul></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg text-orange-500">第3条（表明保証および禁止事項）</h3><p>掲載を申請するチーム代表者は、以下の事項を表明し保証します。</p><ul className="list-disc pl-5 mt-2 space-y-2 text-slate-400"><li>実在する団体であり、具体的な活動実態があること。</li><li>申請内容（チーム名、活動内容、物品の必要性）に一切の虚偽がないこと。</li><li>反社会的勢力（暴力団、暴力団員、その他これに準ずる者）に該当しないこと。</li></ul><p className="mt-2 text-red-400 font-bold">※虚偽の申請により金銭または物品を受領した場合、詐欺罪としての刑事告訴および損害賠償請求を行います。</p></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第4条（返金・免責）</h3><p>本サービスの性質上（寄付・支援）、原則として決済完了後のサポーター都合による返金・キャンセルは受け付けません。ただし、チームの解散や活動停止により物品送付が不能となった場合は、甲の判断により返金等の措置を講じる場合があります。</p></div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第1条（総則）</h3>
+                            <p>本規約は、MySupporter運営事務局（以下「甲」）が提供する物品支援プラットフォーム「MySupporter」（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意の上、本サービスを利用するものとします。</p>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第2条（支援金の使途と仕組み）</h3>
+                            <ul className="list-disc pl-5 space-y-2 text-slate-400">
+                                <li>本サービスは、サポーターからの支援金を原資として、甲がチームの希望する物品を代理購入し、配送するサービスです。</li>
+                                <li>支援金には、物品代金のほか、システム利用料（10%）、配送・梱包等の事務手数料（一律500円）が含まれます。</li>
+                                <li>目標金額に到達した時点で決済が確定し、物品の手配が行われます。</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg text-orange-500">第3条（表明保証および禁止事項）</h3>
+                            <p>掲載を申請するチーム代表者は、以下の事項を表明し保証します。</p>
+                            <ul className="list-disc pl-5 mt-2 space-y-2 text-slate-400">
+                                <li>実在する団体であり、具体的な活動実態があること。</li>
+                                <li>申請内容（チーム名、活動内容、物品の必要性）に一切の虚偽がないこと。</li>
+                                <li>反社会的勢力（暴力団、暴力団員、その他これに準ずる者）に該当しないこと。</li>
+                            </ul>
+                            <p className="mt-2 text-red-400 font-bold">※虚偽の申請により金銭または物品を受領した場合、詐欺罪としての刑事告訴および損害賠償請求を行います。</p>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第4条（返金・免責）</h3>
+                            <p>本サービスの性質上（寄付・支援）、原則として決済完了後のサポーター都合による返金・キャンセルは受け付けません。ただし、チームの解散や活動停止により物品送付が不能となった場合は、甲の判断により返金等の措置を講じる場合があります。</p>
+                        </div>
                     </div>
                 ),
                 privacy: (
                     <div className="space-y-8">
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">1. 個人情報の収集</h3><p>本サービスでは、決済処理および商品配送、活動報告のために、以下の個人情報を取得します。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>氏名、メールアドレス、電話番号、住所（配送先のみ）、クレジットカード情報（決済代行業者のみが保持）</li></ul></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">2. 個人情報の利用目的</h3><p>取得した情報は、以下の目的以外には利用しません。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>支援物品の購入および配送業務</li><li>決済手続きおよび領収書等の発行</li><li>サービスに関する重要なお知らせ、活動報告の送付</li></ul></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">3. 第三者提供</h3><p>法令に基づく場合を除き、利用者の同意なく第三者に個人情報を提供することはありません。ただし、支援先のチームに対しては、支援者リストとして氏名（ニックネーム）のみ開示される場合があります。</p></div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">1. 個人情報の収集</h3>
+                            <p>本サービスでは、決済処理および商品配送、活動報告のために、以下の個人情報を取得します。</p>
+                            <ul className="list-disc pl-5 mt-2 text-slate-400">
+                                <li>氏名、メールアドレス、電話番号、住所（配送先のみ）、クレジットカード情報（決済代行業者のみが保持）</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">2. 個人情報の利用目的</h3>
+                            <p>取得した情報は、以下の目的以外には利用しません。</p>
+                            <ul className="list-disc pl-5 mt-2 text-slate-400">
+                                <li>支援物品の購入および配送業務</li>
+                                <li>決済手続きおよび領収書等の発行</li>
+                                <li>サービスに関する重要なお知らせ、活動報告の送付</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">3. 第三者提供</h3>
+                            <p>法令に基づく場合を除き、利用者の同意なく第三者に個人情報を提供することはありません。ただし、支援先のチームに対しては、支援者リストとして氏名（ニックネーム）のみ開示される場合があります。</p>
+                        </div>
                     </div>
                 ),
                 tokusho: (
                     <div className="space-y-6">
-                        <table className="w-full text-left text-sm border-collapse"><tbody className="divide-y divide-white/10">
-                            <tr><th className="py-4 text-white w-1/3">販売業者</th><td className="py-4 text-slate-300">MySupporter 運営事務局</td></tr>
-                            <tr><th className="py-4 text-white">運営統括責任者</th><td className="py-4 text-slate-300">茂住 雄太</td></tr>
-                            <tr><th className="py-4 text-white">所在地</th><td className="py-4 text-slate-300">東京都中野区（請求があり次第、遅滞なく開示します）</td></tr>
-                            <tr><th className="py-4 text-white">連絡先</th><td className="py-4 text-orange-500">kanri@mycoach-myteam.com</td></tr>
-                            <tr><th className="py-4 text-white">販売価格</th><td className="py-4 text-slate-300">各プロジェクトページに記載（商品代金＋システム手数料＋送料）</td></tr>
-                            <tr><th className="py-4 text-white">商品代金以外の必要料金</th><td className="py-4 text-slate-300">インターネット接続料金、通信料金等</td></tr>
-                            <tr><th className="py-4 text-white">支払方法</th><td className="py-4 text-slate-300">クレジットカード決済（Stripe）</td></tr>
-                            <tr><th className="py-4 text-white">商品の引渡時期</th><td className="py-4 text-slate-300">目標金額達成後、Amazon/楽天等の在庫状況に準じて7営業日以内に発送手配</td></tr>
-                            <tr><th className="py-4 text-white">キャンセル・返品</th><td className="py-4 text-slate-300">支援という性質上、原則としてお受けできません。</td></tr>
-                        </tbody></table>
+                        <table className="w-full text-left text-sm border-collapse">
+                            <tbody className="divide-y divide-white/10">
+                                <tr><th className="py-4 text-white w-1/3">販売業者</th><td className="py-4 text-slate-300">MySupporter 運営事務局</td></tr>
+                                <tr><th className="py-4 text-white">運営統括責任者</th><td className="py-4 text-slate-300">茂住 雄太</td></tr>
+                                <tr><th className="py-4 text-white">所在地</th><td className="py-4 text-slate-300">東京都中野区（請求があり次第、遅滞なく開示します）</td></tr>
+                                <tr><th className="py-4 text-white">連絡先</th><td className="py-4 text-orange-500">kanri@mycoach-myteam.com</td></tr>
+                                <tr><th className="py-4 text-white">販売価格</th><td className="py-4 text-slate-300">各プロジェクトページに記載（商品代金＋システム手数料＋送料）</td></tr>
+                                <tr><th className="py-4 text-white">商品代金以外の必要料金</th><td className="py-4 text-slate-300">インターネット接続料金、通信料金等</td></tr>
+                                <tr><th className="py-4 text-white">支払方法</th><td className="py-4 text-slate-300">クレジットカード決済（Stripe）</td></tr>
+                                <tr><th className="py-4 text-white">商品の引渡時期</th><td className="py-4 text-slate-300">目標金額達成後、Amazon/楽天等の在庫状況に準じて7営業日以内に発送手配</td></tr>
+                                <tr><th className="py-4 text-white">キャンセル・返品</th><td className="py-4 text-slate-300">支援という性質上、原則としてお受けできません。</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 )
             };
@@ -180,7 +216,13 @@
                 const file = e.target.files[0];
                 if(file) { const r = new FileReader(); r.onloadend = () => callback(r.result); r.readAsDataURL(file); }
             };
-            const extractImageFromCode = (c) => (c.match(/<img[^>]+src="([^">]+)"/) || [])[1];
+            
+            // 修正：画像抽出ロジック（エラー回避強化）
+            const extractImageFromCode = (code) => {
+                if (!code || typeof code !== 'string') return null;
+                const match = code.match(/<img[^>]+src=["']([^"']+)["']/i);
+                return match ? match[1] : null;
+            };
             
             const stats = useMemo(() => {
                 const totalPayment = campaigns.reduce((acc, c) => acc + c.current, 0);
@@ -219,7 +261,6 @@
                 }).sort((a,b) => (a.current >= calcTarget(a.price) ? 1 : -1) || (b.supporters - a.supporters));
             }, [campaigns, searchQuery]);
 
-            // DBアクション
             const submitRequest = async () => {
                 if(!applyForm.team || !applyForm.email) return alert("必須項目を入力してください");
                 if(!applyAgreed) return alert("規約への同意が必要です");
@@ -228,12 +269,24 @@
                 setApplyForm({ team: "", email: "", itemUrl: "", teamUrl: "", snsUrl: "", description: "", image: null });
                 alert("リクエストを送信しました"); setView('home');
             };
+            
+            // 修正：商品名の引継ぎ承認
             const approveRequest = async (req) => {
                 if(!req.estimatedPrice) return alert("金額を入力してください");
-                await db.collection("campaigns").add({ ...req, name: "新規募集商品", price: req.estimatedPrice, current: 0, supporters: 0, status: 'active', month: new Date().toISOString().slice(0, 7) });
+                const productName = req.name || "新規募集商品 (編集してください)";
+                await db.collection("campaigns").add({ 
+                    ...req, 
+                    name: productName,
+                    price: req.estimatedPrice, 
+                    current: 0, 
+                    supporters: 0, 
+                    status: 'active', 
+                    month: new Date().toISOString().slice(0, 7) 
+                });
                 await db.collection("requests").doc(req.id).delete();
                 alert("承認完了");
             };
+
             const completeSupport = async () => {
                 const newCur = selectedCampaign.current + selectedAmount;
                 const target = calcTarget(selectedCampaign.price);
@@ -249,7 +302,6 @@
                 setReportForm({ team: "", title: "", content: "", image: null });
                 alert("公開しました"); 
             };
-            // 完了メール機能（メーラー起動 + 署名修正）
             const updateOrderStatus = async (c, s) => {
                 if(confirm("発注完了として処理し、完了メールの下書きを作成しますか？")) {
                     await db.collection("campaigns").doc(c.id).update({ status: s });
@@ -314,7 +366,7 @@
                                     <div key={req.id} className="glass-panel p-8 rounded-[2rem] grid grid-cols-1 md:grid-cols-3 gap-8 border-l-8 border-orange-600">
                                         <div className="space-y-4">
                                             <div className="aspect-video bg-white/5 rounded-2xl overflow-hidden flex items-center justify-center relative">{req.image ? <img src={req.image} className="w-full h-full object-cover"/> : "No Image"}</div>
-                                            <div className="space-y-2"><textarea className="input-field text-xs h-12" placeholder="楽天コード" value={rakutenCodes[req.id]||""} onChange={e=>setRakutenCodes({...rakutenCodes,[req.id]:e.target.value})}/><button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={()=>{const src=extractImageFromCode(rakutenCodes[req.id]);if(src)setRequests(requests.map(r=>r.id===req.id?{...r,image:src}:r))}}>画像適用</button></div>
+                                            <div className="space-y-2"><textarea className="input-field text-xs h-12" placeholder="楽天コード" value={rakutenCodes[req.id]||""} onChange={e=>setRakutenCodes({...rakutenCodes,[req.id]:e.target.value})}/><button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={()=>{const src=extractImageFromCode(rakutenCodes[req.id]);if(src)setRequests(requests.map(r=>r.id===req.id?{...r,image:src}:r)); else alert("画像が見つかりません。コードを確認してください。")}}>画像適用</button></div>
                                             <a href={req.itemUrl} target="_blank" className="text-xs text-orange-500 underline block text-center">商品URL</a>
                                         </div>
                                         <div className="md:col-span-2 space-y-4">
@@ -323,13 +375,32 @@
                                                 <a href={req.teamUrl} target="_blank">HP: {req.teamUrl||"なし"}</a>
                                                 <a href={req.snsUrl} target="_blank">SNS: {req.snsUrl||"なし"}</a>
                                             </div>
+                                            
+                                            {/* 商品名の編集 */}
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-500">商品名 (承認後表示)</label>
+                                                <input className="input-field text-sm" placeholder="商品名を入力 (例: 公式試合球)" value={req.name||''} 
+                                                    onChange={e => handleRequestLocalUpdate(req.id, 'name', e.target.value)} 
+                                                    onBlur={e => saveRequestToDB(req.id, 'name', e.target.value)} 
+                                                />
+                                            </div>
+
                                             <div className="bg-white/5 p-4 rounded-xl"><label className="text-[10px] font-bold text-orange-500">承認金額</label>
                                                 <input type="number" className="input-field text-xl" value={req.estimatedPrice||''} 
                                                     onChange={e => handleRequestLocalUpdate(req.id, 'estimatedPrice', parseInt(e.target.value))} 
                                                     onBlur={e => saveRequestToDB(req.id, 'estimatedPrice', parseInt(e.target.value))}
                                                 />
                                             </div>
-                                            <p className="text-sm text-slate-400">{req.description}</p>
+                                            
+                                            {/* 説明文の編集 */}
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-500">リクエスト理由</label>
+                                                <textarea className="input-field text-sm h-20" value={req.description||''} 
+                                                    onChange={e => handleRequestLocalUpdate(req.id, 'description', e.target.value)} 
+                                                    onBlur={e => saveRequestToDB(req.id, 'description', e.target.value)}
+                                                ></textarea>
+                                            </div>
+
                                             <div className="flex gap-4"><button onClick={()=>approveRequest(req)} className="flex-1 bg-orange-600 py-3 rounded-xl font-black text-xs">承認</button><button onClick={()=>deleteDoc("requests", req.id)} className="px-8 border border-white/10 rounded-xl font-black text-xs hover:bg-red-600">削除</button></div>
                                         </div>
                                     </div>
@@ -339,13 +410,19 @@
                                     <div key={c.id} className="glass-panel p-6 rounded-3xl flex flex-col md:flex-row gap-6 items-center">
                                         <div className="w-32 shrink-0 space-y-2">
                                             <div className="w-full h-32 bg-white rounded-2xl overflow-hidden"><img src={c.image} className="w-full h-full object-contain"/></div>
-                                            <input className="input-field py-1 px-2 text-[10px] w-full" placeholder="楽天コード" value={rakutenCodes[c.id]||""} onChange={e=>setRakutenCodes({...rakutenCodes,[c.id]:e.target.value})}/><button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={()=>{const src=extractImageFromCode(rakutenCodes[c.id]);if(src)saveToDB(c.id, 'image', src)}}>画像抽出</button>
+                                            <input className="input-field py-1 px-2 text-[10px] w-full" placeholder="楽天コード" value={rakutenCodes[c.id]||""} onChange={e=>setRakutenCodes({...rakutenCodes,[c.id]:e.target.value})}/><button className="w-full py-1 bg-white/10 rounded text-[10px]" onClick={()=>{const src=extractImageFromCode(rakutenCodes[c.id]);if(src)saveToDB(c.id, 'image', src); else alert("画像が見つかりません")}}>画像抽出</button>
                                         </div>
-                                        <div className="flex-grow grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                                            <div><label className="text-[10px] text-slate-500 font-bold">チーム名</label><input className="input-field py-1 px-2 text-xs" value={c.team} onChange={e=>handleLocalUpdate(c.id, 'team', e.target.value)} onBlur={e=>saveToDB(c.id, 'team', e.target.value)} /></div>
-                                            <div><label className="text-[10px] text-slate-500 font-bold">商品名</label><input className="input-field py-1 px-2 text-xs" value={c.name} onChange={e=>handleLocalUpdate(c.id, 'name', e.target.value)} onBlur={e=>saveToDB(c.id, 'name', e.target.value)} /></div>
-                                            <div><label className="text-[10px] text-slate-500 font-bold">価格</label><input type="number" className="input-field py-1 px-2 text-xs" value={c.price} onChange={e=>handleLocalUpdate(c.id, 'price', parseInt(e.target.value))} onBlur={e=>saveToDB(c.id, 'price', parseInt(e.target.value))} /></div>
-                                            <div><label className="text-[10px] text-slate-500 font-bold">URL</label><input className="input-field py-1 px-2 text-[10px]" value={c.teamUrl||""} onChange={e=>handleLocalUpdate(c.id, 'teamUrl', e.target.value)} onBlur={e=>saveToDB(c.id, 'teamUrl', e.target.value)} /></div>
+                                        <div className="flex-grow space-y-4 w-full">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div><label className="text-[10px] text-slate-500 font-bold">チーム名</label><input className="input-field py-1 px-2 text-xs" value={c.team} onChange={e=>handleLocalUpdate(c.id, 'team', e.target.value)} onBlur={e=>saveToDB(c.id, 'team', e.target.value)} /></div>
+                                                <div><label className="text-[10px] text-slate-500 font-bold">商品名</label><input className="input-field py-1 px-2 text-xs" value={c.name} onChange={e=>handleLocalUpdate(c.id, 'name', e.target.value)} onBlur={e=>saveToDB(c.id, 'name', e.target.value)} /></div>
+                                                <div><label className="text-[10px] text-slate-500 font-bold">価格</label><input type="number" className="input-field py-1 px-2 text-xs" value={c.price} onChange={e=>handleLocalUpdate(c.id, 'price', parseInt(e.target.value))} onBlur={e=>saveToDB(c.id, 'price', parseInt(e.target.value))} /></div>
+                                                <div><label className="text-[10px] text-slate-500 font-bold">URL</label><input className="input-field py-1 px-2 text-[10px]" value={c.teamUrl||""} onChange={e=>handleLocalUpdate(c.id, 'teamUrl', e.target.value)} onBlur={e=>saveToDB(c.id, 'teamUrl', e.target.value)} /></div>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] text-slate-500 font-bold">説明文</label>
+                                                <textarea className="input-field py-2 px-2 text-xs h-16" value={c.description||''} onChange={e=>handleLocalUpdate(c.id, 'description', e.target.value)} onBlur={e=>saveToDB(c.id, 'description', e.target.value)}></textarea>
+                                            </div>
                                         </div>
                                         <button onClick={()=>deleteDoc("campaigns", c.id)} className="text-xs font-black border border-white/10 px-4 py-2 rounded-lg hover:bg-red-600">削除</button>
                                     </div>
