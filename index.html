@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | 完全版 (クラウド同期)</title>
+    <title>MySupporter | 完全版 (規約・機能統合)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -49,7 +49,6 @@
             measurementId: "G-E12NPFBT9H"
         };
         
-        // Firebase初期化
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -101,7 +100,6 @@
             const [requests, setRequests] = useState([]);
             const [reports, setReports] = useState([]);
 
-            // ▼▼▼ サーバーからデータをリアルタイム取得 (useEffect) ▼▼▼
             useEffect(() => {
                 const unsubCampaigns = db.collection("campaigns").onSnapshot(snapshot => {
                     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -117,25 +115,65 @@
                 });
                 return () => { unsubCampaigns(); unsubRequests(); unsubReports(); };
             }, []);
-            // ▲▲▲▲▲▲
 
             const [applyForm, setApplyForm] = useState({ team: "", email: "", itemUrl: "", teamUrl: "", snsUrl: "", description: "", image: null });
             const [applyAgreed, setApplyAgreed] = useState(false);
+            const [reportForm, setReportForm] = useState({ team: "", title: "", content: "", image: null });
 
+            // 法的文書 (復元・詳細化版)
             const docContent = {
                 terms: (
                     <div className="space-y-8">
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第1条（総則）</h3><p>本規約は、MySupporter運営事務局（以下「甲」）が提供する物品支援プラットフォーム「MySupporter」（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意の上、本サービスを利用するものとします。</p></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第2条（支援金の使途と仕組み）</h3><ul className="list-disc pl-5 space-y-2 text-slate-400"><li>本サービスは、サポーターからの支援金を原資として、甲がチームの希望する物品を代理購入し、配送するサービスです。</li><li>支援金には、物品代金のほか、システム利用料（10%）、配送・梱包等の事務手数料（一律500円）が含まれます。</li><li>目標金額に到達した時点で決済が確定し、物品の手配が行われます。</li></ul></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg text-orange-500">第3条（表明保証および禁止事項）</h3><p>掲載を申請するチーム代表者は、以下の事項を表明し保証します。</p><ul className="list-disc pl-5 mt-2 space-y-2 text-slate-400"><li>実在する団体であり、具体的な活動実態があること。</li><li>申請内容（チーム名、活動内容、物品の必要性）に一切の虚偽がないこと。</li><li>反社会的勢力（暴力団、暴力団員、その他これに準ずる者）に該当しないこと。</li></ul><p className="mt-2 text-red-400 font-bold">※虚偽の申請により金銭または物品を受領した場合、詐欺罪としての刑事告訴および損害賠償請求を行います。</p></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第4条（返金・免責）</h3><p>本サービスの性質上（寄付・支援）、原則として決済完了後のサポーター都合による返金・キャンセルは受け付けません。ただし、チームの解散や活動停止により物品送付が不能となった場合は、甲の判断により返金等の措置を講じる場合があります。</p></div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第1条（総則）</h3>
+                            <p>本規約は、MySupporter運営事務局（以下「甲」）が提供する物品支援プラットフォーム「MySupporter」（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意の上、本サービスを利用するものとします。</p>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第2条（支援金の使途と仕組み）</h3>
+                            <ul className="list-disc pl-5 space-y-2 text-slate-400">
+                                <li>本サービスは、サポーターからの支援金を原資として、甲がチームの希望する物品を代理購入し、配送するサービスです。</li>
+                                <li>支援金には、物品代金のほか、システム利用料（10%）、配送・梱包等の事務手数料（一律500円）が含まれます。</li>
+                                <li>目標金額に到達した時点で決済が確定し、物品の手配が行われます。</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg text-orange-500">第3条（表明保証および禁止事項）</h3>
+                            <p>掲載を申請するチーム代表者は、以下の事項を表明し保証します。</p>
+                            <ul className="list-disc pl-5 mt-2 space-y-2 text-slate-400">
+                                <li>実在する団体であり、具体的な活動実態があること。</li>
+                                <li>申請内容（チーム名、活動内容、物品の必要性）に一切の虚偽がないこと。</li>
+                                <li>反社会的勢力（暴力団、暴力団員、その他これに準ずる者）に該当しないこと。</li>
+                            </ul>
+                            <p className="mt-2 text-red-400 font-bold">※虚偽の申請により金銭または物品を受領した場合、詐欺罪としての刑事告訴および損害賠償請求を行います。</p>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">第4条（返金・免責）</h3>
+                            <p>本サービスの性質上（寄付・支援）、原則として決済完了後のサポーター都合による返金・キャンセルは受け付けません。ただし、チームの解散や活動停止により物品送付が不能となった場合は、甲の判断により返金等の措置を講じる場合があります。</p>
+                        </div>
                     </div>
                 ),
                 privacy: (
                     <div className="space-y-8">
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">1. 個人情報の収集</h3><p>本サービスでは、決済処理および商品配送、活動報告のために、以下の個人情報を取得します。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>氏名、メールアドレス、電話番号、住所（配送先のみ）、クレジットカード情報（決済代行業者のみが保持）</li></ul></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">2. 個人情報の利用目的</h3><p>取得した情報は、以下の目的以外には利用しません。</p><ul className="list-disc pl-5 mt-2 text-slate-400"><li>支援物品の購入および配送業務</li><li>決済手続きおよび領収書等の発行</li><li>サービスに関する重要なお知らせ、活動報告の送付</li></ul></div>
-                        <div><h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">3. 第三者提供</h3><p>法令に基づく場合を除き、利用者の同意なく第三者に個人情報を提供することはありません。ただし、支援先のチームに対しては、支援者リストとして氏名（ニックネーム）のみ開示される場合があります。</p></div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">1. 個人情報の収集</h3>
+                            <p>本サービスでは、決済処理および商品配送、活動報告のために、以下の個人情報を取得します。</p>
+                            <ul className="list-disc pl-5 mt-2 text-slate-400">
+                                <li>氏名、メールアドレス、電話番号、住所（配送先のみ）、クレジットカード情報（決済代行業者のみが保持）</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">2. 個人情報の利用目的</h3>
+                            <p>取得した情報は、以下の目的以外には利用しません。</p>
+                            <ul className="list-disc pl-5 mt-2 text-slate-400">
+                                <li>支援物品の購入および配送業務</li>
+                                <li>決済手続きおよび領収書等の発行</li>
+                                <li>サービスに関する重要なお知らせ、活動報告の送付</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold border-b border-white/20 pb-2 mb-4 text-lg">3. 第三者提供</h3>
+                            <p>法令に基づく場合を除き、利用者の同意なく第三者に個人情報を提供することはありません。ただし、支援先のチームに対しては、支援者リストとして氏名（ニックネーム）のみ開示される場合があります。</p>
+                        </div>
                     </div>
                 ),
                 tokusho: (
@@ -173,8 +211,18 @@
             };
 
             const stats = useMemo(() => {
-                const total = campaigns.reduce((acc, c) => acc + c.current, 0);
-                return { total, fee: Math.floor(total * 0.1), shipping: campaigns.filter(c => c.status === 'completed' || c.status === 'ordered').length * 500 };
+                const totalPayment = campaigns.reduce((acc, c) => acc + c.current, 0); // 総支払い金額
+                const transactionCount = campaigns.reduce((acc, c) => acc + (c.supporters || 0), 0); // 取り扱い数
+                const completedCampaigns = campaigns.filter(c => c.current >= calcTarget(c.price) || c.status === 'completed' || c.status === 'ordered');
+                const totalShipping = completedCampaigns.length * 500;
+
+                return { 
+                    totalPayment, 
+                    transactionCount,
+                    stripeFee: Math.floor(totalPayment * 0.036), // 3.6%
+                    adminFee: Math.floor(totalPayment * 0.064),  // 6.4%
+                    shipping: totalShipping
+                };
             }, [campaigns]);
 
             const handleLogin = () => {
@@ -192,7 +240,6 @@
             const shareText = (c) => encodeURIComponent(`【MySupporter】${c.team}の「${c.name}」を応援しよう！`);
             const copyToClipboard = () => navigator.clipboard.writeText(shareUrl).then(() => alert("リンクをコピーしました"));
 
-            // フィルタリング
             const filteredCampaigns = useMemo(() => {
                 return campaigns.filter(c => {
                     const matchSearch = searchQuery === "" || c.team.toLowerCase().includes(searchQuery.toLowerCase()) || c.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -207,7 +254,6 @@
                 });
             }, [campaigns, searchQuery]);
 
-            // ▼▼▼ サーバーへの書き込み処理 ▼▼▼
             const submitRequest = async () => {
                 if(!applyForm.team || !applyForm.email) { alert("必須項目を入力してください"); return; }
                 if(!applyAgreed){ alert("規約への同意が必要です"); return; }
@@ -242,18 +288,57 @@
             const updateCampaign = async (id, data) => await db.collection("campaigns").doc(id).update(data);
             const deleteCampaign = async (id) => { if(confirm("削除しますか？")) await db.collection("campaigns").doc(id).delete(); };
             const deleteRequest = async (id) => await db.collection("requests").doc(id).delete();
-            const updateOrderStatus = async (id, status) => { if(confirm("ステータスを更新しますか？")) await db.collection("campaigns").doc(id).update({ status }); };
+            
+            const updateOrderStatus = async (campaign, status) => { 
+                if(confirm("発注完了として処理し、完了メールの下書きを作成しますか？")) {
+                    await db.collection("campaigns").doc(campaign.id).update({ status });
+                    const subject = encodeURIComponent("【MySupporter】支援物資の発注手続き完了のお知らせ");
+                    const body = encodeURIComponent(
+`${campaign.team} 代表者様
+
+MySupporter運営事務局です。
+
+この度は「MySupporter」をご利用いただきありがとうございます。
+プロジェクト「${campaign.name}」が目標金額を達成いたしましたので、
+本日、ご指定の商品（${campaign.itemUrl}）の発注手続きを完了いたしました。
+
+商品の到着まで今しばらくお待ちください。
+
+今後ともMySupporterをよろしくお願いいたします。
+
+--------------------------------------------------
+MySupporter 運営事務局
+--------------------------------------------------`
+                    );
+                    window.location.href = `mailto:${campaign.email}?subject=${subject}&body=${body}`;
+                }
+            };
+
+            // 活動報告の投稿処理 (作成済み)
+            const submitReport = async () => {
+                if(!reportForm.team || !reportForm.title || !reportForm.content) { alert("必須項目を入力してください"); return; }
+                await db.collection("reports").add({ ...reportForm, date: new Date().toLocaleDateString('ja-JP') });
+                setReportForm({ team: "", title: "", content: "", image: null });
+                alert("報告を公開しました");
+            };
 
             const seedData = async () => {
                 if(!confirm("データベースに初期データを投入しますか？")) return;
                 const initCamps = [
-                    { team: "東京サッカーアカデミー", category: "サッカー", name: "公式試合球 10個セット", price: 58000, current: 42000, supporters: 24, email: "contact@tsa.example.com", teamUrl: "https://example.com", snsUrl: "https://twitter.com/example", image: "https://images-na.ssl-images-amazon.com/images/I/81xU7z9E4DL._AC_SL1500_.jpg", status: "active", month: "2026-01", description: "全国大会に向けた練習の質を上げるため、公式球が必要です。" },
-                    { team: "品川ライオンズ", category: "野球", name: "トレーニング用ミニハードル", price: 8500, current: 10000, supporters: 8, email: "info@lions.example.com", teamUrl: "", snsUrl: "", image: "https://m.media-amazon.com/images/I/71m6i-V8NXL._AC_SL1500_.jpg", status: "completed", month: "2026-01", description: "冬のトレーニング期間における基礎体力向上のため。" }
+                    { 
+                        team: "東京サッカーアカデミー", category: "サッカー", name: "公式試合球 10個セット", price: 58000, current: 42000, supporters: 24, email: "contact@tsa.example.com", 
+                        teamUrl: "https://example.com", snsUrl: "https://twitter.com/example", itemUrl: "https://www.amazon.co.jp/dp/B00X9S5Y6Y",
+                        image: "https://images-na.ssl-images-amazon.com/images/I/81xU7z9E4DL._AC_SL1500_.jpg", status: "active", month: "2026-01", description: "全国大会に向けた練習の質を上げるため、公式球が必要です。" 
+                    },
+                    { 
+                        team: "品川ライオンズ", category: "野球", name: "トレーニング用ミニハードル", price: 8500, current: 10000, supporters: 8, email: "info@lions.example.com", 
+                        teamUrl: "", snsUrl: "", itemUrl: "https://www.amazon.co.jp/dp/B01DLYG66M",
+                        image: "https://m.media-amazon.com/images/I/71m6i-V8NXL._AC_SL1500_.jpg", status: "completed", month: "2026-01", description: "冬のトレーニング期間における基礎体力向上のため。" 
+                    }
                 ];
                 initCamps.forEach(c => db.collection("campaigns").add(c));
                 alert("初期データを投入しました");
             };
-            // ▲▲▲▲▲▲
 
             return (
                 <div className="min-h-screen flex flex-col relative">
@@ -280,12 +365,14 @@
                             <div className="bg-orange-600 w-10 h-10 rounded-xl flex items-center justify-center italic font-black text-white shadow-lg text-xl">S</div>
                             <span className="font-black text-2xl tracking-tighter uppercase italic text-white hidden sm:block">MySupporter</span>
                         </div>
+                        
                         {!isAdminMode && (
                             <div className="flex-1 max-w-md mx-4 relative hidden md:block">
                                 <input type="text" placeholder="チーム名や商品で検索..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/10 border border-white/10 rounded-full py-2 px-10 text-xs font-bold text-white focus:border-orange-500 outline-none transition" />
                                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</div>
                             </div>
                         )}
+
                         <div className="flex gap-4">
                             {!isAdminMode && (
                                 <div className="hidden lg:flex bg-white/5 p-1 rounded-full border border-white/10 mr-4">
@@ -316,6 +403,7 @@
                                 
                                 {adminTab === 'requests' && (
                                     <div className="grid gap-6">
+                                        {requests.length === 0 && <p className="text-center text-slate-500">現在リクエストはありません</p>}
                                         {requests.map(req => (
                                             <div key={req.id} className="glass-panel p-8 rounded-[2rem] grid grid-cols-1 md:grid-cols-3 gap-8 border-l-8 border-orange-600">
                                                 <div className="space-y-4">
@@ -386,37 +474,101 @@
                                                         <span>連絡先: {c.email}</span>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => updateOrderStatus(c.id, 'ordered')} className="px-6 py-3 bg-green-500 text-black rounded-xl text-xs font-black uppercase hover:bg-green-400">発注完了にする</button>
+                                                <button onClick={() => updateOrderStatus(c, 'ordered')} className="px-6 py-3 bg-green-500 text-black rounded-xl text-xs font-black uppercase hover:bg-green-400">発注完了にする</button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
+
+                                {adminTab === 'reports' && (
+                                    <div className="space-y-8">
+                                        <div className="glass-panel p-10 rounded-[3rem] border border-orange-500/20">
+                                            <h3 className="text-lg font-black italic mb-8 uppercase">活動報告の新規作成</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-4">
+                                                    <input className="input-field" placeholder="対象チーム名" value={reportForm.team} onChange={(e) => setReportForm({...reportForm, team: e.target.value})} />
+                                                    <input className="input-field" placeholder="タイトル" value={reportForm.title} onChange={(e) => setReportForm({...reportForm, title: e.target.value})} />
+                                                    <div className="h-40 border-2 border-dashed border-white/10 rounded-2xl flex items-center justify-center relative hover:border-orange-500 transition cursor-pointer">
+                                                        {reportForm.image ? <img src={reportForm.image} className="w-full h-full object-cover rounded-xl" /> : <span className="text-[10px] font-black text-slate-500">画像をアップロード</span>}
+                                                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, (res) => setReportForm({...reportForm, image: res}))} />
+                                                    </div>
+                                                </div>
+                                                <textarea className="input-field h-full" placeholder="報告本文..." value={reportForm.content} onChange={(e) => setReportForm({...reportForm, content: e.target.value})}></textarea>
+                                            </div>
+                                            <button className="w-full mt-8 bg-white text-black py-4 rounded-2xl font-black uppercase text-sm hover:bg-slate-200 transition" onClick={submitReport}>公開する</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {adminTab === 'revenue' && (
+                                    <div className="space-y-12">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="glass-panel p-8 rounded-[2rem] border-t-4 border-orange-600"><p className="text-xs font-black text-slate-500 mb-2">総支援額</p><p className="text-4xl font-black italic">¥{stats.totalPayment.toLocaleString()}</p></div>
+                                            <div className="glass-panel p-8 rounded-[2rem]"><p className="text-xs font-black text-slate-500 mb-2">手数料収益 (10%)</p><p className="text-4xl font-black italic text-orange-500">¥{stats.fee.toLocaleString()}</p></div>
+                                            <div className="glass-panel p-8 rounded-[2rem]"><p className="text-xs font-black text-slate-500 mb-2">送料プール</p><p className="text-4xl font-black italic text-white">¥{stats.shipping.toLocaleString()}</p></div>
+                                        </div>
+                                        <div className="glass-panel p-8 rounded-[2rem]">
+                                            <h3 className="text-sm font-black text-slate-500 uppercase mb-6">手数料詳細</h3>
+                                            <div className="grid grid-cols-2 gap-8">
+                                                <div><p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Stripe手数料 (3.6%)</p><p className="text-2xl font-black text-orange-500">¥{stats.stripeFee.toLocaleString()}</p></div>
+                                                <div><p className="text-[10px] font-bold text-slate-500 uppercase mb-1">事務管理手数料 (6.4%)</p><p className="text-2xl font-black text-white">¥{stats.adminFee.toLocaleString()}</p></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : view === 'home' ? (
+                            /* ユーザー画面 */
                             <>
                                 {activeTab === 'campaigns' && (
                                     <>
                                         <section className="pt-32 pb-24 px-8 text-center fade-in">
-                                            <h1 className="text-7xl md:text-[9rem] font-black italic tracking-tighter uppercase leading-[0.85] text-white">Support Your<br/><span className="text-orange-600">Dream Team.</span></h1>
-                                            <p className="text-xl md:text-3xl font-black text-slate-300 mt-8 tracking-widest">そのワンクリックが、未来のアスリートの力になる。</p>
-                                            <div className="max-w-md mx-auto mt-12 md:hidden"><input type="text" placeholder="チーム名や商品で検索..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/10 border border-white/10 rounded-full py-4 px-8 text-sm font-bold text-white focus:border-orange-500 outline-none transition" /></div>
+                                            <h1 className="text-7xl md:text-[9rem] font-black italic tracking-tighter uppercase leading-[0.85] text-white">
+                                                Support Your<br/><span className="text-orange-600">Dream Team.</span>
+                                            </h1>
+                                            <p className="text-xl md:text-3xl font-black text-slate-300 mt-8 tracking-widest">
+                                                そのワンクリックが、未来のアスリートの力になる。
+                                            </p>
+                                            <div className="max-w-md mx-auto mt-12 md:hidden">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="チーム名や商品で検索..." 
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    className="w-full bg-white/10 border border-white/10 rounded-full py-4 px-8 text-sm font-bold text-white focus:border-orange-500 outline-none transition"
+                                                />
+                                            </div>
                                             <div className="w-24 h-2 bg-orange-600 mx-auto mt-16"></div>
                                         </section>
+
                                         <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
                                             {filteredCampaigns.map(c => {
                                                 const target = calcTarget(c.price);
                                                 const progress = Math.min((c.current / target) * 100, 100);
                                                 const isGoal = c.current >= target;
+
                                                 return (
                                                     <div key={c.id} className="campaign-card glass-panel rounded-[2.5rem] overflow-hidden cursor-pointer p-2 border border-white/5 relative" onClick={() => {setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
-                                                        {isGoal && (<div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 pointer-events-none rounded-[2.5rem]"><div className="border-8 border-orange-500 text-orange-500 text-6xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg]">GOAL!!</div></div>)}
-                                                        <div className="aspect-square bg-white rounded-[2rem] p-12 flex items-center justify-center m-2 relative"><img src={c.image} className="max-h-full object-contain" /></div>
+                                                        {isGoal && (
+                                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 pointer-events-none rounded-[2.5rem]">
+                                                                <div className="border-8 border-orange-500 text-orange-500 text-6xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg]">GOAL!!</div>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="aspect-square bg-white rounded-[2rem] p-12 flex items-center justify-center m-2 relative">
+                                                            <img src={c.image} className="max-h-full object-contain" />
+                                                        </div>
                                                         <div className="p-8">
-                                                            <span className="inline-block bg-white text-black px-4 py-1 rounded-full text-sm font-black mb-3 shadow-lg">{c.team}</span>
+                                                            <span className="inline-block bg-white text-black px-4 py-1 rounded-full text-sm font-black mb-3 shadow-lg">
+                                                                {c.team}
+                                                            </span>
                                                             <h3 className="text-xl font-black italic uppercase tracking-tighter text-white h-14 line-clamp-2 leading-none mb-6">{c.name}</h3>
                                                             <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-400"><span className="text-orange-500">👤</span> {c.supporters || 0}人が支援中</div>
                                                             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-4"><div className="h-full progress-glow" style={{width: `${progress}%`}}></div></div>
-                                                            <div className="flex justify-between items-end"><div><p className="text-[10px] font-black text-slate-500 uppercase mb-1">現在</p><span className="text-2xl font-black italic">¥{c.current.toLocaleString()}</span></div><div className="text-right"><p className="text-[10px] font-black text-slate-500 uppercase mb-1">目標</p><span className="text-xs font-black italic">/ ¥{target.toLocaleString()}</span></div></div>
+                                                            <div className="flex justify-between items-end">
+                                                                <div><p className="text-[10px] font-black text-slate-500 uppercase mb-1">現在</p><span className="text-2xl font-black italic">¥{c.current.toLocaleString()}</span></div>
+                                                                <div className="text-right"><p className="text-[10px] font-black text-slate-500 uppercase mb-1">目標</p><span className="text-xs font-black italic">/ ¥{target.toLocaleString()}</span></div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 );
@@ -424,35 +576,183 @@
                                         </div>
                                     </>
                                 )}
-                                {activeTab === 'howitworks' && (<div className="max-w-6xl mx-auto py-20 px-8 fade-in"><div className="text-center mb-16"><h2 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-orange-500">ご利用の流れ</h2><p className="text-slate-500 font-bold">簡単3ステップで支援完了</p></div><div className="grid grid-cols-1 md:grid-cols-3 gap-8">{[ {step: "01", title: "リクエスト", text: "チームが必要な商品をAmazon等から選び、事務局へ申請します。"}, {step: "02", title: "支援募集", text: "サポーターがプロジェクトに共感し、少額から支援を行います。"}, {step: "03", title: "商品お届け", text: "目標金額に達すると、事務局が商品を購入しチームへ配送します。"} ].map((s, i) => (<div key={i} className="glass-panel p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/50 transition"><div className="text-8xl font-black italic text-white/5 absolute -top-4 -right-4">{s.step}</div><h3 className="text-2xl font-black italic mb-4 text-orange-500">{s.title}</h3><p className="text-sm text-slate-300 font-bold leading-relaxed">{s.text}</p></div>))}</div></div>)}
-                                {activeTab === 'thanks' && (<div className="max-w-4xl mx-auto py-20 px-8 fade-in"><h2 className="text-center text-3xl font-black italic uppercase mb-12 tracking-tighter text-orange-500">活動報告</h2><div className="space-y-8">{reports.map(rep => (<div key={rep.id} className="glass-panel p-8 rounded-[2rem] flex gap-8 items-start"><div className="w-32 h-32 bg-white/10 rounded-2xl shrink-0"></div><div><p className="text-[10px] font-black text-slate-500 mb-2">{rep.date} | {rep.team}</p><h3 className="text-xl font-black italic mb-4">{rep.title}</h3><p className="text-sm text-slate-400 font-bold">{rep.content}</p></div></div>))}</div></div>)}
+
+                                {activeTab === 'howitworks' && (
+                                    <div className="max-w-6xl mx-auto py-20 px-8 fade-in">
+                                        <div className="text-center mb-16"><h2 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-orange-500">ご利用の流れ</h2><p className="text-slate-500 font-bold">簡単3ステップで支援完了</p></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                            {[
+                                                {step: "01", title: "リクエスト", text: "チームが必要な商品をAmazon等から選び、事務局へ申請します。"},
+                                                {step: "02", title: "支援募集", text: "サポーターがプロジェクトに共感し、少額から支援を行います。"},
+                                                {step: "03", title: "商品お届け", text: "目標金額に達すると、事務局が商品を購入しチームへ配送します。"}
+                                            ].map((s, i) => (
+                                                <div key={i} className="glass-panel p-10 rounded-[2.5rem] relative overflow-hidden group hover:border-orange-500/50 transition">
+                                                    <div className="text-8xl font-black italic text-white/5 absolute -top-4 -right-4">{s.step}</div>
+                                                    <h3 className="text-2xl font-black italic mb-4 text-orange-500">{s.title}</h3>
+                                                    <p className="text-sm text-slate-300 font-bold leading-relaxed">{s.text}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'thanks' && (
+                                    <div className="max-w-4xl mx-auto py-20 px-8 fade-in">
+                                        <h2 className="text-center text-3xl font-black italic uppercase mb-12 tracking-tighter text-orange-500">活動報告</h2>
+                                        <div className="space-y-8">
+                                            {reports.map(rep => (
+                                                <div key={rep.id} className="glass-panel p-8 rounded-[2rem] flex gap-8 items-start">
+                                                    <div className="w-32 h-32 bg-white/10 rounded-2xl shrink-0">
+                                                        {rep.image && <img src={rep.image} className="w-full h-full object-cover rounded-xl" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-slate-500 mb-2">{rep.date} | {rep.team}</p>
+                                                        <h3 className="text-xl font-black italic mb-4">{rep.title}</h3>
+                                                        <p className="text-sm text-slate-400 font-bold">{rep.content}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </>
                         ) : view === 'detail' ? (
+                            /* ================= 詳細画面 ================= */
                             <div className="max-w-6xl mx-auto p-4 md:p-12 fade-in pb-40">
                                 <button onClick={() => setView('home')} className="text-slate-500 font-black flex items-center gap-2 hover:text-white transition uppercase text-[10px] tracking-widest mb-6">← 一覧に戻る</button>
                                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-16">
                                     <div className="lg:col-span-3">
                                         <div className="glass-panel p-8 md:p-10 rounded-[3rem] border-t-8 border-orange-600 relative overflow-hidden">
-                                            {selectedCampaign.current >= calcTarget(selectedCampaign.price) && (<div className="absolute top-10 right-10 z-20 pointer-events-none"><div className="border-8 border-orange-500 text-orange-500 text-5xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg] opacity-50">GOAL!!</div></div>)}
+                                            {selectedCampaign.current >= calcTarget(selectedCampaign.price) && (
+                                                <div className="absolute top-10 right-10 z-20 pointer-events-none">
+                                                    <div className="border-8 border-orange-500 text-orange-500 text-5xl font-black italic uppercase p-4 rounded-xl goal-stamp tracking-tighter rotate-[-15deg] opacity-50">GOAL!!</div>
+                                                </div>
+                                            )}
+                                            
                                             <span className="inline-block bg-white text-black px-4 py-1 rounded-full text-sm font-black mb-4 shadow-lg">{selectedCampaign.team}</span>
                                             <h2 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter leading-none mb-4">{selectedCampaign.name}</h2>
                                             <div className="mb-8 flex items-center gap-2"><span className="bg-orange-600/20 text-orange-500 px-3 py-1 rounded-full text-xs font-black">👤 {selectedCampaign.supporters || 0} Supporters</span><span className="text-slate-400 text-xs font-bold">が応援中</span></div>
                                             <div className="aspect-square bg-white rounded-3xl p-16 flex items-center justify-center relative"><img src={selectedCampaign.image} className="max-h-full object-contain" /></div>
-                                            <div className="mt-12 pt-8 border-t border-white/10"><h4 className="text-sm font-black text-orange-500 uppercase mb-4 tracking-widest">Why we need this</h4><p className="text-slate-300 font-bold leading-relaxed whitespace-pre-wrap">{selectedCampaign.description || "このプロジェクトへの熱い想いがここに表示されます。"}</p></div>
-                                            <div className="mt-12 pt-8 border-t border-white/10"><h4 className="text-sm font-black text-slate-500 uppercase mb-6 tracking-widest text-center">このプロジェクトをシェアする</h4><div className="flex justify-center gap-4"><button onClick={copyToClipboard} className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-orange-600 transition">Copy Link</button></div></div>
+                                            <div className="mt-12 pt-8 border-t border-white/10">
+                                                <h4 className="text-sm font-black text-orange-500 uppercase mb-4 tracking-widest">Why we need this</h4>
+                                                <p className="text-slate-300 font-bold leading-relaxed whitespace-pre-wrap">{selectedCampaign.description || "このプロジェクトへの熱い想いがここに表示されます。"}</p>
+                                            </div>
+                                            
+                                            <div className="mt-12 pt-8 border-t border-white/10">
+                                                <h4 className="text-sm font-black text-slate-500 uppercase mb-6 tracking-widest text-center">このプロジェクトをシェアする</h4>
+                                                <div className="flex justify-center gap-4">
+                                                    <a href={`https://twitter.com/intent/tweet?text=${shareText(selectedCampaign)}&url=${shareUrl}`} target="_blank" className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white border border-white/20 hover:border-orange-500 transition"><svg fill="currentColor" width="20" height="20" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                                                    <a href={`https://social-plugins.line.me/lineit/share?url=${shareUrl}`} target="_blank" className="w-12 h-12 bg-[#06C755] rounded-full flex items-center justify-center text-white hover:opacity-90 transition"><svg fill="currentColor" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.56 2 10.12c0 2.42 1.25 4.57 3.32 6.09.43.32.32.85.2 1.35-.15.63-.53 1.74-.55 1.83 0 0-.1.39.2.53.31.15.86.04 3.59-1.44 3.25.93 6.77.27 3.24.27 5.52 0 10-3.56 10-8.12S17.52 2 12 2z"/></svg></a>
+                                                    <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" className="w-12 h-12 bg-[#1877F2] rounded-full flex items-center justify-center text-white hover:opacity-90 transition"><svg fill="currentColor" width="24" height="24" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+                                                    <button onClick={copyToClipboard} className="w-12 h-12 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 rounded-full flex items-center justify-center text-white hover:scale-105 transition"><svg fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="lg:col-span-2">
                                         <div className="glass-panel p-6 rounded-[2rem] border border-white/10 h-fit sticky top-24">
-                                            {supportStep === 1 && (<div className="space-y-4 fade-in"><h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 1: 金額を選択</h3><div className="text-center bg-white/5 rounded-xl p-4"><p className="text-[10px] text-slate-500 font-bold uppercase">あと</p><p className="text-3xl font-black italic text-white">¥{(calcTarget(selectedCampaign.price) - selectedCampaign.current).toLocaleString()}</p><p className="text-[10px] text-slate-500 font-bold uppercase">でゴール達成</p></div><div className="grid grid-cols-3 gap-2">{[1000, 3000, 5000].map(v => <button key={v} onClick={() => {setSelectedAmount(v); setSupportStep(2);}} className="py-3 border rounded-xl font-black italic text-sm transition hover:border-orange-500">¥{v.toLocaleString()}</button>)}</div><div className="pt-4 border-t border-white/10 space-y-2"><p className="text-[10px] font-bold text-slate-400 text-center uppercase">または金額を指定</p><div className="flex gap-2"><input type="number" className="input-field text-center font-black" placeholder="¥ 1,000~" value={customAmountInput} onChange={handleCustomAmountChange} /><button onClick={() => {setSelectedAmount(parseInt(customAmountInput)); setSupportStep(2);}} className="px-4 rounded-xl font-black text-xs uppercase transition bg-orange-600 text-white">決定</button></div></div></div>)}
-                                            {supportStep === 2 && (<div className="space-y-4 fade-in"><h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 2: 情報登録</h3><input className="input-field" placeholder="お名前" /><button onClick={() => setSupportStep(3)} className="w-full py-4 bg-orange-600 rounded-xl font-black text-lg italic uppercase hover:bg-orange-500 transition shadow-lg mt-2">次へ進む</button></div>)}
-                                            {supportStep === 3 && (<div className="space-y-6 fade-in text-center py-4"><h3 className="text-lg font-black italic uppercase">Step 3: 決済</h3><p className="text-[10px] text-slate-500">Stripeで安全に決済されます</p><button onClick={completeSupport} className="w-full py-4 bg-orange-600 rounded-xl font-black text-xl italic uppercase shadow-xl hover:bg-orange-500 transition">決済を確定する</button></div>)}
+                                            {supportStep === 1 && (
+                                                <div className="space-y-4 fade-in">
+                                                    <h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 1: 金額を選択</h3>
+                                                    {(() => {
+                                                        const target = calcTarget(selectedCampaign.price);
+                                                        const remaining = target - selectedCampaign.current;
+                                                        
+                                                        if (remaining <= 0) return (
+                                                            <div className="py-10 text-center">
+                                                                <div className="text-4xl mb-2">🎉</div>
+                                                                <p className="text-xl font-black text-white">Target Reached!</p>
+                                                                <p className="text-xs text-slate-400 mt-2">このプロジェクトは目標を達成しました。<br/>ご支援ありがとうございました。</p>
+                                                            </div>
+                                                        );
+
+                                                        return (
+                                                            <>
+                                                                <div className="text-center bg-white/5 rounded-xl p-4">
+                                                                    <p className="text-[10px] text-slate-500 font-bold uppercase">あと</p>
+                                                                    <p className="text-3xl font-black italic text-white">¥{remaining.toLocaleString()}</p>
+                                                                    <p className="text-[10px] text-slate-500 font-bold uppercase">でゴール達成</p>
+                                                                </div>
+
+                                                                <button onClick={() => {setSelectedAmount(remaining); setSupportStep(2);}} className="w-full py-4 bg-white text-black rounded-xl font-black text-sm italic uppercase shadow-lg hover:scale-[1.02] transition flex justify-between px-6 items-center">
+                                                                    <span className="text-xs text-slate-500">全額支援してゴール</span>
+                                                                    <span>¥{remaining.toLocaleString()}</span>
+                                                                </button>
+                                                                
+                                                                <div className="grid grid-cols-3 gap-2">
+                                                                    {[1000, 3000, 5000].map(v => (
+                                                                        <button 
+                                                                            key={v} 
+                                                                            disabled={v > remaining}
+                                                                            onClick={() => {setSelectedAmount(v); setSupportStep(2);}} 
+                                                                            className={`py-3 border rounded-xl font-black italic text-sm transition ${v > remaining ? 'bg-white/5 border-white/5 text-slate-600 cursor-not-allowed' : 'bg-white/5 border-white/10 hover:border-orange-500'}`}
+                                                                        >
+                                                                            ¥{v.toLocaleString()}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                                
+                                                                <div className="pt-4 border-t border-white/10 space-y-2">
+                                                                    <p className="text-[10px] font-bold text-slate-400 text-center uppercase">または金額を指定</p>
+                                                                    <div className="flex gap-2">
+                                                                        <input 
+                                                                            type="number" 
+                                                                            className="input-field text-center font-black" 
+                                                                            placeholder={`¥ 1,000 ~ ${remaining}`} 
+                                                                            value={customAmountInput} 
+                                                                            onChange={handleCustomAmountChange} 
+                                                                            max={remaining}
+                                                                        />
+                                                                        <button 
+                                                                            onClick={() => {
+                                                                                let val = parseInt(customAmountInput);
+                                                                                if(val > remaining) val = remaining; 
+                                                                                setSelectedAmount(val); 
+                                                                                setSupportStep(2);
+                                                                            }} 
+                                                                            disabled={!customAmountInput || parseInt(customAmountInput) < 1000}
+                                                                            className={`px-4 rounded-xl font-black text-xs uppercase transition whitespace-nowrap ${!customAmountInput || parseInt(customAmountInput) < 1000 ? 'bg-white/5 text-slate-500 cursor-not-allowed' : 'bg-orange-600 text-white hover:bg-orange-500'}`}
+                                                                        >
+                                                                            決定
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
+                                            {supportStep === 2 && (
+                                                <div className="space-y-4 fade-in">
+                                                    <h3 className="text-lg font-black italic text-center text-orange-500 uppercase">Step 2: 情報登録</h3>
+                                                    <div className="text-center text-2xl font-black italic text-white py-2 border-b border-white/10">¥{selectedAmount.toLocaleString()}</div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <input className="input-field" placeholder="お名前" />
+                                                        <input className="input-field" placeholder="年齢" type="number" />
+                                                    </div>
+                                                    <input className="input-field" placeholder="メールアドレス" type="email" />
+                                                    <button onClick={() => setSupportStep(3)} className="w-full py-4 bg-orange-600 rounded-xl font-black text-lg italic uppercase hover:bg-orange-500 transition shadow-lg mt-2">次へ進む</button>
+                                                    <button onClick={() => setSupportStep(1)} className="w-full text-[10px] font-black uppercase text-slate-500 text-center">戻る</button>
+                                                </div>
+                                            )}
+                                            {supportStep === 3 && (
+                                                <div className="space-y-6 fade-in text-center py-4">
+                                                    <h3 className="text-lg font-black italic uppercase">Step 3: 決済</h3>
+                                                    <div className="p-4 bg-white/5 rounded-xl">
+                                                        <p className="text-slate-400 font-bold uppercase text-[10px] mb-2">Total Amount</p>
+                                                        <p className="text-3xl font-black text-white">¥{selectedAmount.toLocaleString()}</p>
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-500">Stripeで安全に決済されます</p>
+                                                    <button onClick={completeSupport} className="w-full py-4 bg-orange-600 rounded-xl font-black text-xl italic uppercase shadow-xl hover:bg-orange-500 transition">決済を確定する</button>
+                                                    <button onClick={() => setSupportStep(2)} className="w-full text-[10px] font-black uppercase text-slate-500 text-center">戻る</button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : view === 'apply' && (
-                            /* ================= ① 掲載リクエスト (URL欄追加) ================= */
+                            /* ================= ③ 掲載リクエスト (URL欄追加) ================= */
                             <div className="max-w-2xl mx-auto py-24 px-8 fade-in">
                                 <div className="text-center mb-16"><h2 className="text-4xl font-black italic uppercase text-orange-500 mb-4">掲載リクエスト</h2><p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em]">チームに必要なものを申請しましょう</p></div>
                                 <div className="glass-panel p-12 rounded-[4rem] space-y-8 border-t-[12px] border-orange-600 shadow-2xl">
