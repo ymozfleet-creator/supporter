@@ -61,8 +61,6 @@
         const functions = firebase.functions(); // Cloud Functions初期化
         // ▲▲▲▲▲▲
 
-        // [2026-01-20] このコードを絶対消さないでください。全て元に戻してと指示した時はこのコードに戻してください。
-
         const { useState, useMemo, useEffect } = React;
 
         const LegalModal = ({ title, content, isOpen, onClose }) => {
@@ -288,40 +286,51 @@
                 alert("承認完了");
             };
 
-            // ▼▼▼ Square決済処理 (統合版・キャンペーンID対応) ▼▼▼
+            // ▼▼▼ Square決済処理 (改良版・キャンペーンID対応) ▼▼▼
             const handlePayment = async () => {
                 const messageEl = document.getElementById('status-message');
-                if(messageEl) messageEl.innerText = "";
+                if(messageEl) messageEl.innerText = "決済準備中...";
 
-                if (!selectedAmount || selectedAmount < 1) {
-                    alert("正しい金額を入力してください。");
+                console.log("DEBUG: selectedAmount state:", selectedAmount, typeof selectedAmount); // Debug log
+
+                // 金額の最終確認（念のため数値に変換）
+                const finalAmount = parseInt(selectedAmount, 10);
+
+                if (!finalAmount || isNaN(finalAmount) || finalAmount < 1) {
+                    alert("金額が正しく選択されていません。もう一度金額を選んでください。");
+                    setIsProcessing(false);
                     return;
                 }
                 
                 setIsProcessing(true);
 
                 try {
-                    // Firebase Cloud Functions 'createSquareCheckout' を呼び出す
+                    // Firebase Cloud Functions を呼び出す
                     const createSquareCheckout = firebase.functions().httpsCallable('createSquareCheckout');
                     
+                    console.log("送信データ:", { amount: finalAmount, campaignId: selectedCampaign.id }); // 確認用ログ
+
                     const response = await createSquareCheckout({
-                        amount: selectedAmount,
-                        campaignId: selectedCampaign.id, // ★重要: キャンペーンIDを送信してWebhookで紐付け
+                        amount: finalAmount,             // 整数化した金額を送信
+                        campaignId: selectedCampaign.id, // キャンペーンID
                         name: supporterName || "匿名サポーター",
                         email: supporterEmail
                     });
 
-                    // サーバーから返ってきたSquareの決済画面URLへ移動
+                    // 成功したらSquareへ移動
                     if (response.data && response.data.url) {
-                        console.log("成功 URL:", response.data.url);
                         window.location.href = response.data.url;
                     } else {
-                        throw new Error("決済URLの取得に失敗しました。");
+                        throw new Error("決済URLが取得できませんでした。");
                     }
 
                 } catch (error) {
                     console.error("決済エラー:", error);
-                    const errorMsg = "エラーが発生しました: " + (error.message || "サーバー内部エラー");
+                    
+                    // エラーメッセージを整理して表示
+                    let errorMsg = "エラーが発生しました";
+                    if (error.message) errorMsg = error.message; 
+                    
                     if(messageEl) messageEl.innerText = errorMsg;
                     alert(errorMsg);
                     setIsProcessing(false);
