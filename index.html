@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | Official Release (Compact Layout)</title>
+    <title>MySupporter | Compact Detail View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -50,7 +50,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // ▼▼▼ Firebase設定 (User ID: mysupporter-91816) ▼▼▼
+        // ▼▼▼ Firebase設定 ▼▼▼
         const firebaseConfig = {
             apiKey: "AIzaSyBc6n-8U-8SNcM1CcP4r9sKweAhLcWajNc",
             authDomain: "mysupporter-91816.firebaseapp.com",
@@ -584,7 +584,6 @@
                             </div>
                         ) : view === 'home' ? (
                             <>
-                                {/* ★★★ 修正: ヒーローとリストの分離表示 ★★★ */}
                                 {/* Top: ヒーロービジョン + 支援募集一覧 */}
                                 {activeTab === 'top' && (
                                     <>
@@ -607,7 +606,7 @@
                                             <div className="w-16 h-1 md:w-24 md:h-2 bg-orange-600 mx-auto mt-12 md:mt-16 rounded-full"></div>
                                         </section>
 
-                                        {/* List (Common Component) */}
+                                        {/* List */}
                                         <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 pb-32">
                                             {filteredCampaigns.map(c => {
                                                 const target = calcTarget(c.price);
@@ -631,7 +630,7 @@
                                     </>
                                 )}
 
-                                {/* Campaigns: 支援募集一覧のみ (ヒーローなし) */}
+                                {/* Campaigns */}
                                 {activeTab === 'campaigns' && (
                                     <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 py-32 fade-in">
                                         {filteredCampaigns.map(c => {
@@ -773,71 +772,77 @@
                                 <button onClick={()=>setView('home')} className="text-slate-500 font-black text-xs mb-2">← BACK</button>
                                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4"> {/* ★修正: ギャップ縮小 */}
                                     <div className="lg:col-span-3">
-                                        <div className="glass-panel p-4 md:p-6 rounded-[2rem] border-t-4 border-orange-600 relative"> {/* ★修正: 枠をコンパクトに */}
+                                        <div className="glass-panel p-3 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-t-4 border-orange-600 relative"> {/* ★修正: スマホ用パディングと枠 */}
                                             {selectedCampaign.current >= calcTarget(selectedCampaign.price) && <div className="absolute top-4 right-4 z-20"><div className="goal-stamp border-4 border-orange-500 text-orange-500 text-3xl font-black p-2 rounded-lg rotate-[-15deg] opacity-50">GOAL!!</div></div>}
-                                            <div className="flex gap-4 items-start">
-                                                <div className="w-full">
-                                                     <span className="bg-white text-black px-3 py-1 rounded-full text-xs font-black">{selectedCampaign.team}</span>
-                                                     <h2 className="text-xl md:text-2xl font-black italic mt-2 mb-2">{selectedCampaign.name}</h2>
+                                            
+                                            {/* ★修正: スマホは横並びレイアウト ★ */}
+                                            <div className="flex flex-row md:flex-col gap-3 md:gap-4 items-start">
+                                                {/* 画像 (スマホ: 極小80px, PC: 通常) */}
+                                                <div className="w-20 h-20 md:w-full md:h-64 shrink-0 bg-white rounded-xl md:rounded-2xl p-2 md:p-4 flex items-center justify-center">
+                                                    <img src={selectedCampaign.image} className="max-h-full max-w-full object-contain"/>
+                                                </div>
+
+                                                <div className="w-full min-w-0">
+                                                     <span className="bg-white text-black px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-black truncate max-w-full block w-fit">{selectedCampaign.team}</span>
+                                                     <h2 className="text-base md:text-2xl font-black italic mt-1 md:mt-2 mb-1 md:mb-2 leading-tight">{selectedCampaign.name}</h2>
+                                                     {/* スマホのみ進捗表示 */}
+                                                     <div className="md:hidden text-[10px] text-slate-400 font-bold">
+                                                        現在: <span className="text-white">¥{selectedCampaign.current.toLocaleString()}</span> / 目標: ¥{calcTarget(selectedCampaign.price).toLocaleString()}
+                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            {/* ★修正: 画像高さを制限 */}
-                                            <div className="bg-white rounded-2xl p-4 flex items-center justify-center h-48 md:h-64 mb-4">
-                                                <img src={selectedCampaign.image} className="h-full object-contain"/>
-                                            </div>
 
-                                            {/* ★修正: 説明文をスクロールエリアに */}
-                                            <div className="border-t border-white/10 pt-2">
-                                                <h4 className="text-xs font-black text-orange-500 uppercase mb-1">Why we need this</h4>
-                                                <div className="max-h-24 md:max-h-32 overflow-y-auto text-xs md:text-sm text-slate-300 font-bold whitespace-pre-wrap leading-relaxed pr-2 custom-scrollbar">
+                                            {/* ★修正: 説明文をスクロールエリアに (高さ制限) */}
+                                            <div className="mt-2 md:mt-4 border-t border-white/10 pt-2">
+                                                <h4 className="text-[10px] md:text-xs font-black text-orange-500 uppercase mb-1">Why we need this</h4>
+                                                <div className="max-h-16 md:max-h-32 overflow-y-auto text-[10px] md:text-sm text-slate-300 font-bold whitespace-pre-wrap leading-relaxed pr-2 custom-scrollbar">
                                                     {selectedCampaign.description}
                                                 </div>
                                             </div>
                                             
-                                            <div className="mt-4 flex justify-center gap-4">
-                                                <button onClick={copyToClipboard} className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-orange-600 transition text-xs">🔗</button>
-                                                <a href={`https://twitter.com/intent/tweet?text=${shareText(selectedCampaign)}&url=${shareUrl}`} target="_blank" className="w-8 h-8 bg-black rounded-full flex items-center justify-center border border-white/20 text-xs">𝕏</a>
+                                            <div className="mt-2 flex justify-end gap-2 md:justify-center md:gap-4 md:mt-4">
+                                                <button onClick={copyToClipboard} className="w-6 h-6 md:w-8 md:h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-orange-600 transition text-[10px] md:text-xs">🔗</button>
+                                                <a href={`https://twitter.com/intent/tweet?text=${shareText(selectedCampaign)}&url=${shareUrl}`} target="_blank" className="w-6 h-6 md:w-8 md:h-8 bg-black rounded-full flex items-center justify-center border border-white/20 text-[10px] md:text-xs">𝕏</a>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="lg:col-span-2">
-                                        <div className="glass-panel p-4 md:p-6 rounded-[2rem] border border-white/10 sticky top-4">
-                                            {supportStep===1 && <div className="space-y-4">
-                                                <h3 className="text-center font-black italic text-orange-500 text-sm">STEP 1: 金額選択</h3>
-                                                <div className="text-center bg-white/5 rounded-xl p-3">
+                                        <div className="glass-panel p-3 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-white/10 sticky top-4">
+                                            {supportStep===1 && <div className="space-y-3 md:space-y-4">
+                                                <h3 className="text-center font-black italic text-orange-500 text-xs md:text-sm">STEP 1: 金額選択</h3>
+                                                <div className="text-center bg-white/5 rounded-lg p-2 md:p-3">
                                                     {(() => {
                                                         const target = calcTarget(selectedCampaign.price);
                                                         const remaining = target - selectedCampaign.current;
-                                                        if (remaining <= 0) return <><p className="text-xl font-black text-orange-500">GOAL Reached!</p><p className="text-[10px] text-slate-500">目標達成しました</p></>;
-                                                        return <><p className="text-[10px] text-slate-500">あと</p><p className="text-2xl font-black">¥{remaining.toLocaleString()}</p><p className="text-[10px] text-slate-500">でゴール</p></>;
+                                                        if (remaining <= 0) return <><p className="text-lg md:text-xl font-black text-orange-500">GOAL!</p><p className="text-[10px] text-slate-500">達成済み</p></>;
+                                                        return <><p className="text-[10px] text-slate-500">あと</p><p className="text-xl md:text-2xl font-black">¥{remaining.toLocaleString()}</p><p className="text-[10px] text-slate-500">でゴール</p></>;
                                                     })()}
                                                 </div>
                                                 
                                                 {(() => {
                                                     const remaining = calcTarget(selectedCampaign.price) - selectedCampaign.current;
                                                     if (remaining > 0) return (
-                                                        <button onClick={()=>{setSelectedAmount(remaining);setSupportStep(2)}} className="w-full py-3 bg-white text-black rounded-xl font-black italic text-xs hover:scale-[1.02] transition flex justify-between px-4 items-center shadow-lg">
-                                                            <span className="text-[10px] text-slate-500">全額支援してゴール</span>
+                                                        <button onClick={()=>{setSelectedAmount(remaining);setSupportStep(2)}} className="w-full py-2 md:py-3 bg-white text-black rounded-lg font-black italic text-[10px] md:text-xs hover:scale-[1.02] transition flex justify-between px-3 md:px-4 items-center shadow-lg">
+                                                            <span className="text-[10px] text-slate-500">全額支援</span>
                                                             <span>¥{remaining.toLocaleString()}</span>
                                                         </button>
                                                     );
                                                 })()}
 
-                                                <div className="grid grid-cols-3 gap-2">{[1000,3000,5000].map(v=><button key={v} onClick={()=>{setSelectedAmount(v);setSupportStep(2)}} className="py-2 border rounded-xl font-black text-xs hover:border-orange-500">¥{v.toLocaleString()}</button>)}</div>
-                                                <div className="flex gap-2"><input type="number" className="input-field text-center text-sm py-2" placeholder="金額指定" onChange={handleCustomAmountChange}/><button onClick={()=>{if(selectedAmount>=1000)setSupportStep(2)}} className="px-4 bg-orange-600 rounded-xl font-black text-xs">決定</button></div>
+                                                <div className="grid grid-cols-3 gap-2">{[1000,3000,5000].map(v=><button key={v} onClick={()=>{setSelectedAmount(v);setSupportStep(2)}} className="py-2 border rounded-lg font-black text-[10px] md:text-xs hover:border-orange-500">¥{v.toLocaleString()}</button>)}</div>
+                                                <div className="flex gap-2"><input type="number" className="input-field text-center text-xs py-2 h-8 md:h-auto" placeholder="金額指定" onChange={handleCustomAmountChange}/><button onClick={()=>{if(selectedAmount>=1000)setSupportStep(2)}} className="px-3 bg-orange-600 rounded-lg font-black text-[10px] md:text-xs whitespace-nowrap">決定</button></div>
                                             </div>}
-                                            {supportStep===2 && <div className="space-y-4">
-                                                <h3 className="text-center font-black italic text-orange-500 text-sm">STEP 2: 情報</h3>
-                                                <p className="text-center text-xl font-black">¥{selectedAmount.toLocaleString()}</p>
-                                                <input className="input-field text-sm py-2" placeholder="名前" value={supporterName} onChange={e=>setSupporterName(e.target.value)} />
-                                                <input className="input-field text-sm py-2" placeholder="Email" value={supporterEmail} onChange={e=>setSupporterEmail(e.target.value)} />
-                                                <button onClick={()=>setSupportStep(3)} className="w-full py-3 bg-orange-600 rounded-xl font-black text-sm">次へ</button>
+                                            {supportStep===2 && <div className="space-y-3 md:space-y-4">
+                                                <h3 className="text-center font-black italic text-orange-500 text-xs md:text-sm">STEP 2: 情報</h3>
+                                                <p className="text-center text-lg md:text-xl font-black">¥{selectedAmount.toLocaleString()}</p>
+                                                <input className="input-field text-xs py-2 h-8 md:h-auto" placeholder="名前" value={supporterName} onChange={e=>setSupporterName(e.target.value)} />
+                                                <input className="input-field text-xs py-2 h-8 md:h-auto" placeholder="Email" value={supporterEmail} onChange={e=>setSupporterEmail(e.target.value)} />
+                                                <button onClick={()=>setSupportStep(3)} className="w-full py-2 md:py-3 bg-orange-600 rounded-lg font-black text-xs md:text-sm">次へ</button>
                                             </div>}
-                                            {supportStep===3 && <div className="space-y-4 text-center py-2">
-                                                <h3 className="font-black italic text-sm">STEP 3: 決済</h3>
+                                            {supportStep===3 && <div className="space-y-3 text-center py-2">
+                                                <h3 className="font-black italic text-xs md:text-sm">STEP 3: 決済</h3>
                                                 <p className="text-[10px] text-slate-500">Stripe決済（デモ）</p>
-                                                <button onClick={isProcessing ? null : handlePayment} className={`w-full py-3 bg-orange-600 rounded-xl font-black text-lg shadow-xl ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}>
+                                                <button onClick={isProcessing ? null : handlePayment} className={`w-full py-2 md:py-3 bg-orange-600 rounded-lg font-black text-sm md:text-lg shadow-xl ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}>
                                                     {isProcessing ? <div className="loading-spinner"></div> : "決済を確定する"}
                                                 </button>
                                             </div>}
