@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySupporter | Square Edition v3.0</title>
+    <title>MySupporter | Square Edition v4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -286,7 +286,7 @@
                 alert("承認完了");
             };
 
-            // ▼▼▼ Square決済処理 (v3.0 完全版) ▼▼▼
+            // ▼▼▼ Square決済処理 (v4.0 Final: Debug & Fix) ▼▼▼
             const handlePayment = async () => {
                 const messageEl = document.getElementById('status-message');
                 if(messageEl) messageEl.innerText = "通信中...";
@@ -294,9 +294,11 @@
                 // 数値に変換
                 const finalAmount = parseInt(selectedAmount, 10);
 
+                console.log("DEBUG: Sending Amount =", finalAmount);
+
                 // ★重要：送信前にアラートを出し、確実に数値があるか確認します
-                // もしこのアラートが出ない場合、ファイルが更新されていません！
                 if (finalAmount > 0) {
+                     // 念のためアラートで確認（本番では消してもOK）
                      alert(`【確認】¥${finalAmount} の決済を開始します。`);
                 } else {
                      alert(`エラー: 金額が 0円 または不正です (値: ${selectedAmount})`);
@@ -325,6 +327,7 @@
 
                 } catch (error) {
                     console.error("決済エラー:", error);
+                    // サーバーからのエラーメッセージを表示
                     alert("エラー: " + error.message); 
                     if(messageEl) messageEl.innerText = error.message;
                     setIsProcessing(false);
@@ -391,7 +394,7 @@
                     <nav className="h-20 md:h-24 flex items-center justify-between px-4 md:px-12 sticky top-0 bg-[#060608]/95 backdrop-blur-xl z-50 border-b border-white/5 gap-4 md:gap-8">
                         <div className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0" onClick={() => {setView('home'); setActiveTab('top'); setIsAdminMode(false);}}>
                             <div className="bg-orange-600 w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center italic font-black text-white shadow-lg text-lg md:text-xl">S</div>
-                            <span className="font-black text-xl md:text-2xl tracking-tighter uppercase italic text-white">MySupporter <span className="text-[10px] text-orange-500 ml-2">v3.0 (Fixed)</span></span>
+                            <span className="font-black text-xl md:text-2xl tracking-tighter uppercase italic text-white">MySupporter <span className="text-[10px] text-orange-500 ml-2">v4.0 (Final)</span></span>
                         </div>
                         {!isAdminMode && (
                             <div className="hidden md:block flex-1 max-w-xl relative border border-white/10 bg-white/5 rounded-2xl transition-all overflow-hidden focus-within:border-orange-500">
