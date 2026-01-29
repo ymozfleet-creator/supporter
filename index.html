@@ -424,7 +424,7 @@
                         <div className="hidden lg:flex bg-white/5 p-1 rounded-full border border-white/10">
                             {['campaigns', 'about', 'howitworks', 'thanks'].map(tab => (
                                 <button key={tab} onClick={() => {setView('home'); setActiveTab(tab);}} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-                                    {tab === 'about' ? 'MySUPPORTERとは' : tab === 'campaigns' ? '支援募集' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
+                                    {tab === 'about' ? 'MySUPPORTERとは' : tab === 'campaigns' ? '支援一覧' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
                                 </button>
                             ))}
                         </div>
@@ -441,7 +441,7 @@
                                     <button key={tab} onClick={() => {setView('home'); setActiveTab(tab); window.scrollTo({ top: 0, behavior: 'smooth' });}} 
                                         className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap 
                                         ${activeTab === tab ? 'bg-orange-600 text-white shadow-lg' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
-                                        {tab === 'about' ? 'MySUPPORTERとは' : tab === 'campaigns' ? '支援募集' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
+                                        {tab === 'about' ? 'MySUPPORTERとは' : tab === 'campaigns' ? '支援一覧' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
                                     </button>
                                 ))}
                             </div>
@@ -458,7 +458,7 @@
                                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 mb-8 gap-2 overflow-x-auto">
                                     {['monitor', 'requests', 'campaigns', 'orders', 'reports', 'revenue'].map(t => (
                                         <button key={t} onClick={()=>setAdminTab(t)} className={`admin-tab ${adminTab===t ? 'active' : 'text-slate-500'}`}>
-                                            {t==='monitor'?'進捗一覧':t==='requests'?'リクエスト管理':t==='campaigns'?'募集編集':t==='orders'?'発注管理':t==='reports'?'活動報告作成':'収益管理'}
+                                            {t==='monitor'?'進捗一覧':t==='requests'?'リクエスト管理':t==='campaigns'?'支援編集':t==='orders'?'発注管理':t==='reports'?'活動報告作成':'収益管理'}
                                         </button>
                                     ))}
                                 </div>
