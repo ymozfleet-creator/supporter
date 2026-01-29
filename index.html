@@ -61,6 +61,8 @@
         const functions = firebase.functions(); // Cloud Functions初期化
         // ▲▲▲▲▲▲
 
+        // [2026-01-20] このコードを絶対消さないでください。全て元に戻してと指示した時はこのコードに戻してください。
+
         const { useState, useMemo, useEffect } = React;
 
         const LegalModal = ({ title, content, isOpen, onClose }) => {
@@ -286,7 +288,7 @@
                 alert("承認完了");
             };
 
-            // ▼▼▼ Square決済処理 (統合版) ▼▼▼
+            // ▼▼▼ Square決済処理 (統合版・キャンペーンID対応) ▼▼▼
             const handlePayment = async () => {
                 const messageEl = document.getElementById('status-message');
                 if(messageEl) messageEl.innerText = "";
@@ -304,6 +306,7 @@
                     
                     const response = await createSquareCheckout({
                         amount: selectedAmount,
+                        campaignId: selectedCampaign.id, // ★重要: キャンペーンIDを送信してWebhookで紐付け
                         name: supporterName || "匿名サポーター",
                         email: supporterEmail
                     });
