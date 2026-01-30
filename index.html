@@ -629,7 +629,8 @@
 
                                                 return (
                                                     <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
-                                                        {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-8 border-pink-500 text-pink-500 text-6xl font-black p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
+                                                        {/* ▼▼▼ 修正: スマホでは小さく(3xl)、PCでは大きく(6xl)表示するように変更 ▼▼▼ */}
+                                                        {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-4 md:border-8 border-pink-500 text-pink-500 text-3xl md:text-6xl font-black p-2 md:p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                         
                                                         <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
                                                             <img src={c.teamImage || c.image} className="w-full h-full object-cover"/>
@@ -660,7 +661,8 @@
 
                                             return (
                                                 <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
-                                                    {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-8 border-pink-500 text-pink-500 text-6xl font-black p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
+                                                    {/* ▼▼▼ 修正: こちらも同様にレスポンシブ化 ▼▼▼ */}
+                                                    {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-4 md:border-8 border-pink-500 text-pink-500 text-3xl md:text-6xl font-black p-2 md:p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                     
                                                     <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
                                                         <img src={c.teamImage || c.image} className="w-full h-full object-cover"/>
