@@ -615,11 +615,19 @@
                                                 Support Your<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400">Dream Team.</span>
                                             </h1>
                                             <p className="text-lg md:text-3xl font-black text-slate-500 mt-6 md:mt-8 tracking-widest">
-                                                そのワンクリックが、未来の力になる。<br />
+                                                そのワンクリックが、未来のチカラになる。<br />
                                                 モノが届く新しい応援のカタチ。
                                             </p>
                                             <div className="w-16 h-1 md:w-24 md:h-2 bg-gradient-to-r from-blue-600 to-cyan-400 mx-auto mt-12 md:mt-16 rounded-full"></div>
                                         </section>
+
+                                        {/* ▼▼▼ スマホ対応: 検索窓をヘッダーからここに移動(スマホ時のみ表示) ▼▼▼ */}
+                                        <div className="md:hidden max-w-sm mx-auto mb-8 px-4">
+                                            <div className="relative border border-slate-200 bg-white rounded-2xl transition-all overflow-hidden focus-within:border-blue-500 shadow-sm">
+                                                <input type="text" placeholder="学校名や商品で検索..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent py-3 px-12 outline-none text-sm font-bold text-slate-700 placeholder-slate-400" />
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</div>
+                                            </div>
+                                        </div>
 
                                         {/* List */}
                                         <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 pb-32">
@@ -629,7 +637,6 @@
 
                                                 return (
                                                     <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
-                                                        {/* ▼▼▼ 修正: スマホでは小さく(3xl)、PCでは大きく(6xl)表示するように変更 ▼▼▼ */}
                                                         {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-4 md:border-8 border-pink-500 text-pink-500 text-3xl md:text-6xl font-black p-2 md:p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                         
                                                         <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
@@ -661,7 +668,6 @@
 
                                             return (
                                                 <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
-                                                    {/* ▼▼▼ 修正: こちらも同様にレスポンシブ化 ▼▼▼ */}
                                                     {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-4 md:border-8 border-pink-500 text-pink-500 text-3xl md:text-6xl font-black p-2 md:p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                     
                                                     <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
@@ -694,7 +700,8 @@
                                             </p>
                                         </div>
                                         
-                                        <div className="hidden md:grid grid-cols-3 gap-6">
+                                        {/* ▼▼▼ 修正: スマホ(md未満)でも表示されるようにhiddenを削除し、grid-cols-1を追加 ▼▼▼ */}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             {[
                                                 {title: "100%の透明性", text: "支援金は指定された「物品購入」のみに使われます。", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"},
                                                 {title: "モノで届く", text: "現金ではなく新品の用具が届く喜びが、チームを支えます。", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"},
