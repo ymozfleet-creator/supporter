@@ -15,104 +15,27 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&display=swap');
         
-        body { 
-            font-family: 'Inter', 'Noto Sans JP', sans-serif; 
-            background-color: #f0f4f8; 
-            color: #1e293b; 
-            margin: 0; 
-            overflow-x: hidden; 
-        }
-
-        .bg-gradient-mesh {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: -1;
-            background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
-                        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 40%);
-        }
-
-        .glass-panel { 
-            background: rgba(255, 255, 255, 0.85); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.9); 
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.08);
-        }
-
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #f0f4f8; color: #1e293b; margin: 0; overflow-x: hidden; }
+        .bg-gradient-mesh { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 40%); }
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.08); }
         .campaign-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .campaign-card:hover { 
-            border-color: #3b82f6; 
-            transform: translateY(-8px); 
-            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.15);
-        }
-
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .input-field { 
-            background: #ffffff; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 0.75rem; 
-            padding: 0.75rem; 
-            width: 100%; 
-            outline: none; 
-            color: #334155; 
-            transition: 0.3s; 
-            font-size: 14px; 
-            font-weight: 600; 
-        }
-        .input-field:focus { 
-            border-color: #3b82f6; 
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); 
-        }
-
-        .admin-tab { 
-            padding: 0.75rem 1.5rem; 
-            font-weight: 800; 
-            font-size: 0.75rem; 
-            text-transform: uppercase; 
-            letter-spacing: 0.05em; 
-            transition: 0.3s; 
-            border-radius: 0.75rem; 
-            text-align: center; 
-            color: #64748b; 
-            white-space: nowrap; 
-            cursor: pointer;
-            background: white;
-            border: 1px solid #e2e8f0;
-        }
+        .campaign-card:hover { border-color: #3b82f6; transform: translateY(-8px); box-shadow: 0 15px 40px rgba(59, 130, 246, 0.15); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; } @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .input-field { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; padding: 0.75rem; width: 100%; outline: none; color: #334155; transition: 0.3s; font-size: 14px; font-weight: 600; }
+        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        .admin-tab { padding: 0.75rem 1.5rem; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; transition: 0.3s; border-radius: 0.75rem; text-align: center; color: #64748b; white-space: nowrap; cursor: pointer; background: white; border: 1px solid #e2e8f0; }
         .admin-tab:hover { background: #f8fafc; color: #3b82f6; }
         .admin-tab.active { background: #3b82f6; color: white; border-color: #3b82f6; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
-
         .modal-overlay { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(5px); }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); } .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
         .secret-trigger { cursor: default; user-select: none; }
-        
-        .goal-stamp { 
-            animation: stamp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
-            opacity: 0; 
-            transform: scale(2) rotate(-15deg);
-            color: #ec4899; 
-            border-color: #ec4899;
-        }
+        .goal-stamp { animation: stamp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; transform: scale(2) rotate(-15deg); color: #ec4899; border-color: #ec4899; }
         @keyframes stamp { to { opacity: 1; transform: scale(1) rotate(-15deg); } }
-
         .loading-spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 3px solid #ffffff; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .meter-bg { background: #e2e8f0; height: 8px; border-radius: 99px; overflow: hidden; position: relative; }
-        .meter-fill { 
-            height: 100%; 
-            background: linear-gradient(90deg, #06b6d4, #3b82f6); 
-            border-radius: 99px; 
-            width: 0%; 
-            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); 
-            position: relative; 
-        }
+        .meter-fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #3b82f6); border-radius: 99px; width: 0%; transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); position: relative; }
         .meter-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); transform: translateX(-100%); animation: shimmer 2s infinite; }
         @keyframes shimmer { 100% { transform: translateX(100%); } }
     </style>
@@ -122,7 +45,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // ▼▼▼ Firebase設定 (User ID: mysupporter-91816) ▼▼▼
+        // ▼▼▼ Firebase設定 ▼▼▼
         const firebaseConfig = {
             apiKey: "AIzaSyBc6n-8U-8SNcM1CcP4r9sKweAhLcWajNc",
             authDomain: "mysupporter-91816.firebaseapp.com",
@@ -137,13 +60,15 @@
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
-        const functions = firebase.functions();
+        const functions = firebase.functions(); // Cloud Functionsの初期化
         // ▲▲▲▲▲▲
 
         const { useState, useMemo, useEffect } = React;
 
         const ProgressBar = ({ current, target }) => {
-            const percent = Math.min((current / target) * 100, 100);
+            const safeCurrent = Number(current) || 0;
+            const safeTarget = Number(target) || 1;
+            const percent = Math.min((safeCurrent / safeTarget) * 100, 100);
             return (
                 <div className="w-full mt-3">
                     <div className="flex justify-between items-end mb-1">
@@ -212,7 +137,12 @@
             const [requests, setRequests] = useState([]);
             const [reports, setReports] = useState([]);
 
-            const calcTarget = (price) => Math.floor((price + 500) * 1.1);
+            const calcTarget = (price) => Math.floor((Number(price) + 500) * 1.1);
+            
+            const isGoalReached = (c) => {
+                if (!c) return false;
+                return Number(c.current) >= calcTarget(c.price);
+            };
 
             useEffect(() => {
                 const unsubC = db.collection("campaigns").onSnapshot(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -226,7 +156,7 @@
                 if (!isAdminMode) setView('home'); 
             }, [isAdminMode]);
 
-            // DB保存処理（エラー時リカバリ機能付き）
+            // DB保存処理
             const handleLocalUpdate = (id, field, value) => {
                 setCampaigns(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
             };
@@ -242,7 +172,6 @@
                 catch(e) { console.error("Update failed", e); try { await db.collection("requests").doc(id).set({ [field]: value }, { merge: true }); } catch (e2) { alert("保存失敗: " + e2.message); } }
             };
 
-            // 画像圧縮処理 (500px / 0.4 / 350KB制限)
             const handleImageUpload = (e, callback) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -314,14 +243,14 @@
             };
 
             const stats = useMemo(() => {
-                const totalPayment = campaigns.reduce((acc, c) => acc + c.current, 0);
+                const totalPayment = campaigns.reduce((acc, c) => acc + (Number(c.current)||0), 0);
                 return { 
                     totalPayment, 
                     activeCount: campaigns.length,
                     requestCount: requests.length,
                     stripeFee: Math.floor(totalPayment * 0.036), 
                     adminFee: Math.floor(totalPayment * 0.064), 
-                    shipping: campaigns.filter(c => c.current >= calcTarget(c.price)).length * 500 
+                    shipping: campaigns.filter(c => isGoalReached(c)).length * 500 
                 };
             }, [campaigns, requests]);
 
@@ -338,7 +267,12 @@
                 return campaigns.filter(c => {
                     const match = !searchQuery || c.team.toLowerCase().includes(searchQuery.toLowerCase()) || c.name.toLowerCase().includes(searchQuery.toLowerCase());
                     return match && (c.status === 'active' || c.status === 'completed');
-                }).sort((a,b) => (a.current >= calcTarget(a.price) ? 1 : -1) || (b.supporters - a.supporters));
+                }).sort((a,b) => {
+                    const goalA = isGoalReached(a);
+                    const goalB = isGoalReached(b);
+                    if (goalA !== goalB) return goalA ? 1 : -1;
+                    return (b.supporters || 0) - (a.supporters || 0);
+                });
             }, [campaigns, searchQuery]);
 
             const submitRequest = async () => {
@@ -363,26 +297,42 @@
             
             const approveRequest = async (req) => {
                 if(!req.estimatedPrice) return alert("承認金額を入力してください");
-                await db.collection("campaigns").add({ ...req, name: req.name || "商品名未設定", price: req.estimatedPrice, current: 0, supporters: 0, status: 'active', month: new Date().toISOString().slice(0, 7) });
+                await db.collection("campaigns").add({ ...req, name: req.name || "商品名未設定", price: parseInt(req.estimatedPrice), current: 0, supporters: 0, status: 'active', month: new Date().toISOString().slice(0, 7) });
                 await db.collection("requests").doc(req.id).delete();
                 alert("承認・公開しました");
             };
 
+            // ▼▼▼ 本番用: Cloud Functionsを呼び出して決済URLへ誘導する ▼▼▼
             const handlePayment = async () => {
                 if (!selectedAmount) return alert("金額エラー");
                 setIsProcessing(true);
                 try {
+                    // サーバー側の関数 'createSquareCheckout' を呼び出す
                     const createSquareCheckout = firebase.functions().httpsCallable('createSquareCheckout');
-                    const response = await createSquareCheckout({ amount: selectedAmount, campaignId: selectedCampaign.id, name: supporterName, email: supporterEmail });
-                    if (response.data && response.data.url) window.location.href = response.data.url;
-                    else throw new Error("決済URL取得失敗");
+                    
+                    const response = await createSquareCheckout({ 
+                        amount: selectedAmount, 
+                        campaignId: selectedCampaign.id, 
+                        teamName: selectedCampaign.team, 
+                        itemName: selectedCampaign.name,
+                        supporterName: supporterName || "匿名サポーター", 
+                        email: supporterEmail 
+                    });
+
+                    // サーバーから返ってきた決済ページ(URL)へジャンプ
+                    if (response.data && response.data.url) {
+                        window.location.href = response.data.url;
+                    } else {
+                        throw new Error("決済URLの取得に失敗しました");
+                    }
                 } catch (error) {
-                    alert("エラー: " + error.message);
+                    console.error(error);
+                    alert("決済開始エラー: " + error.message);
                     setIsProcessing(false);
                 }
             };
+            // ▲▲▲▲▲▲
 
-            // ▼▼▼ 修正: 活動報告の投稿処理（DB連携） ▼▼▼
             const submitReport = async () => {
                 if(!reportForm.team || !reportForm.content) return alert("必須項目（チーム名・本文）を入力してください");
                 setIsProcessing(true);
@@ -401,7 +351,6 @@
                     setIsProcessing(false);
                 }
             };
-            // ▲▲▲▲▲▲
 
             const deleteDoc = async (col, id) => { if(confirm("削除しますか？")) await db.collection(col).doc(id).delete(); };
             const createDemoOrder = async () => { 
@@ -469,7 +418,6 @@
                     )}
 
                     <main className="flex-grow">
-                        {/* ▼▼▼ 管理者ダッシュボード (機能連携確認済み) ▼▼▼ */}
                         {view === 'admin' && isAdminMode ? (
                             <div className="max-w-7xl mx-auto p-4 md:p-12 fade-in">
                                 <div className="flex justify-between items-end border-b border-slate-300 pb-4 md:pb-8 mb-8">
@@ -498,17 +446,6 @@
                                             <p className="text-xs font-black text-slate-500 mb-2">公開中の案件</p>
                                             <p className="text-4xl font-black text-green-600">{stats.activeCount}件</p>
                                         </div>
-                                    </div>
-                                )}
-
-                                {adminTab === 'monitor' && ( /* 進捗一覧（旧デザイン踏襲） */
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {campaigns.map(c => (
-                                            <div key={c.id} className="glass-panel p-6 rounded-2xl border-l-4 border-blue-500">
-                                                <h3 className="font-bold">{c.name}</h3>
-                                                <ProgressBar current={c.current} target={calcTarget(c.price)} />
-                                            </div>
-                                        ))}
                                     </div>
                                 )}
 
@@ -603,7 +540,7 @@
                                     </div>
                                 ))}</div>}
 
-                                {adminTab === 'orders' && <div className="space-y-6">{campaigns.filter(c => c.current >= calcTarget(c.price) && c.status !== 'ordered').map(c => (
+                                {adminTab === 'orders' && <div className="space-y-6">{campaigns.filter(c => isGoalReached(c) && c.status !== 'ordered').map(c => (
                                     <div key={c.id} className="glass-panel p-6 md:p-8 rounded-[2rem] flex flex-col md:flex-row items-center gap-8 border-l-8 border-green-500">
                                         <div className="flex-grow w-full">
                                             <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded">達成済み</span>
@@ -622,7 +559,6 @@
                                     </div>
                                 ))}</div>}
 
-                                {/* ▼▼▼ 修正: 活動報告作成画面の復元 ▼▼▼ */}
                                 {adminTab === 'reports' && (
                                     <div className="space-y-8">
                                         <div className="glass-panel p-6 md:p-10 rounded-[3rem] border border-blue-500/20">
@@ -661,7 +597,6 @@
                                         </div>
                                     </div>
                                 )}
-                                {/* ▲▲▲▲▲▲ */}
 
                                 {adminTab === 'revenue' && <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="glass-panel p-8 rounded-[2rem] border-t-4 border-blue-600"><p className="text-xs font-black text-slate-500 mb-2">総支援額</p><p className="text-4xl font-black italic text-slate-800">¥{stats.totalPayment.toLocaleString()}</p></div>
@@ -690,13 +625,12 @@
                                         <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 pb-32">
                                             {filteredCampaigns.map(c => {
                                                 const target = calcTarget(c.price);
-                                                const isGoal = c.current >= target;
+                                                const isGoal = isGoalReached(c);
 
                                                 return (
                                                     <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
                                                         {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-8 border-pink-500 text-pink-500 text-6xl font-black p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                         
-                                                        {/* メイン: チーム画像 */}
                                                         <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
                                                             <img src={c.teamImage || c.image} className="w-full h-full object-cover"/>
                                                             <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
@@ -707,7 +641,7 @@
                                                         <div className="p-3 md:p-6">
                                                             <h3 className="text-sm md:text-xl font-black italic text-slate-800 mt-2 mb-2 line-clamp-1">{c.name}</h3>
                                                             <div className="flex items-center gap-2 mb-2 text-[10px] md:text-xs font-bold text-slate-400"><span className="text-blue-500">👤</span> {c.supporters || 0}人が支援中</div>
-                                                            <div className="flex justify-between items-end"><div><p className="text-[8px] md:text-[10px] text-slate-400">現在</p><span className="text-sm md:text-2xl font-black text-blue-600">¥{c.current.toLocaleString()}</span></div><div className="text-right"><p className="text-[8px] md:text-[10px] text-slate-400">目標</p><span className="text-[10px] md:text-xs font-black text-slate-500">/ ¥{target.toLocaleString()}</span></div></div>
+                                                            <div className="flex justify-between items-end"><div><p className="text-[8px] md:text-[10px] text-slate-400">現在</p><span className="text-sm md:text-2xl font-black text-blue-600">¥{Number(c.current).toLocaleString()}</span></div><div className="text-right"><p className="text-[8px] md:text-[10px] text-slate-400">目標</p><span className="text-[10px] md:text-xs font-black text-slate-500">/ ¥{target.toLocaleString()}</span></div></div>
                                                             <ProgressBar current={c.current} target={target} />
                                                         </div>
                                                     </div>
@@ -722,13 +656,12 @@
                                     <div className="max-w-7xl mx-auto px-2 md:px-8 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 py-32 fade-in">
                                         {filteredCampaigns.map(c => {
                                             const target = calcTarget(c.price);
-                                            const isGoal = c.current >= target;
+                                            const isGoal = isGoalReached(c);
 
                                             return (
                                                 <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
                                                     {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-8 border-pink-500 text-pink-500 text-6xl font-black p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                     
-                                                    {/* メイン: チーム写真 */}
                                                     <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
                                                         <img src={c.teamImage || c.image} className="w-full h-full object-cover"/>
                                                         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
@@ -739,7 +672,7 @@
                                                     <div className="p-3 md:p-6">
                                                         <h3 className="text-sm md:text-xl font-black italic text-slate-800 mt-2 mb-2 line-clamp-1">{c.name}</h3>
                                                         <div className="flex items-center gap-2 mb-2 text-[10px] md:text-xs font-bold text-slate-400"><span className="text-blue-500">👤</span> {c.supporters || 0}人が支援中</div>
-                                                        <div className="flex justify-between items-end"><div><p className="text-[8px] md:text-[10px] text-slate-400">現在</p><span className="text-sm md:text-2xl font-black text-blue-600">¥{c.current.toLocaleString()}</span></div><div className="text-right"><p className="text-[8px] md:text-[10px] text-slate-400">目標</p><span className="text-[10px] md:text-xs font-black text-slate-500">/ ¥{target.toLocaleString()}</span></div></div>
+                                                        <div className="flex justify-between items-end"><div><p className="text-[8px] md:text-[10px] text-slate-400">現在</p><span className="text-sm md:text-2xl font-black text-blue-600">¥{Number(c.current).toLocaleString()}</span></div><div className="text-right"><p className="text-[8px] md:text-[10px] text-slate-400">目標</p><span className="text-[10px] md:text-xs font-black text-slate-500">/ ¥{target.toLocaleString()}</span></div></div>
                                                         <ProgressBar current={c.current} target={target} />
                                                     </div>
                                                 </div>
@@ -822,7 +755,7 @@
                                         </div>
                                     </div>
                                 )}
-                                {/* ▼▼▼ 復元・修正: 活動報告表示（一般公開画面） ▼▼▼ */}
+                                
                                 {activeTab === 'thanks' && (
                                     <div className="max-w-4xl mx-auto py-20 px-8 fade-in">
                                         <h2 className="text-center text-3xl font-black italic uppercase mb-12 tracking-tighter text-blue-600">活動報告</h2>
@@ -848,7 +781,6 @@
                                         }
                                     </div>
                                 )}
-                                {/* ▲▲▲▲▲▲ */}
                             </>
                         ) : view === 'detail' ? (
                             <div className="max-w-6xl mx-auto p-2 md:p-4 pb-20">
@@ -856,9 +788,8 @@
                                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                                     <div className="lg:col-span-3">
                                         <div className="glass-panel p-3 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-t-4 border-blue-600 relative overflow-hidden">
-                                            {selectedCampaign.current >= calcTarget(selectedCampaign.price) && <div className="absolute top-4 right-4 z-20"><div className="goal-stamp border-4 border-pink-500 text-pink-500 text-3xl font-black p-2 rounded-lg rotate-[-15deg] opacity-50">GOAL!!</div></div>}
+                                            {isGoalReached(selectedCampaign) && <div className="absolute top-4 right-4 z-20"><div className="goal-stamp border-4 border-pink-500 text-pink-500 text-3xl font-black p-2 rounded-lg rotate-[-15deg] opacity-50">GOAL!!</div></div>}
                                             
-                                            {/* メイン: チーム写真 */}
                                             <div className="relative rounded-xl md:rounded-2xl overflow-hidden aspect-video shadow-lg mb-6 group bg-slate-100">
                                                 <img src={selectedCampaign.teamImage || selectedCampaign.image} className="w-full h-full object-cover transition duration-700 group-hover:scale-105"/>
                                                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
@@ -867,7 +798,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* コメントと商品画像 */}
                                             <div className="flex flex-col md:flex-row gap-6">
                                                 <div className="flex-1 order-2 md:order-1">
                                                     <h4 className="text-[10px] md:text-xs font-black text-blue-600 uppercase mb-2 flex items-center gap-2">
@@ -878,7 +808,6 @@
                                                     </div>
                                                 </div>
                                                 
-                                                {/* 商品画像 (右/上) */}
                                                 <div className="w-full md:w-40 shrink-0 order-1 md:order-2">
                                                     <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
                                                         <div className="text-[10px] text-center font-bold text-slate-400 mb-1">Target Item</div>
@@ -902,14 +831,19 @@
                                                 <div className="text-center bg-blue-50/50 rounded-lg p-2 md:p-3 border border-blue-100">
                                                     {(() => {
                                                         const target = calcTarget(selectedCampaign.price);
-                                                        const remaining = target - selectedCampaign.current;
+                                                        const current = Number(selectedCampaign.current);
+                                                        const remaining = target - current;
+                                                        
                                                         if (remaining <= 0) return <><p className="text-lg md:text-xl font-black text-green-600">GOAL REACHED!</p><p className="text-[10px] text-slate-500">達成済み</p></>;
                                                         return <><p className="text-[10px] text-slate-500">あと</p><p className="text-xl md:text-2xl font-black text-blue-900">¥{remaining.toLocaleString()}</p><p className="text-[10px] text-slate-500">でゴール</p></>;
                                                     })()}
                                                 </div>
                                                 
                                                 {(() => {
-                                                    const remaining = calcTarget(selectedCampaign.price) - selectedCampaign.current;
+                                                    const target = calcTarget(selectedCampaign.price);
+                                                    const current = Number(selectedCampaign.current);
+                                                    const remaining = target - current;
+                                                    
                                                     if (remaining > 0) return (
                                                         <button onClick={()=>{setSelectedAmount(remaining);setSupportStep(2)}} className="w-full py-2 md:py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-black italic text-[10px] md:text-xs hover:scale-[1.02] transition flex justify-between px-3 md:px-4 items-center shadow-lg">
                                                             <span className="text-[10px] opacity-90">全額支援</span>
