@@ -144,12 +144,29 @@
                 return Number(c.current) >= calcTarget(c.price);
             };
 
+            // ▼▼▼ 修正: データ読み込み時にURLパラメータ(id)を確認し、該当ページを開く ▼▼▼
             useEffect(() => {
-                const unsubC = db.collection("campaigns").onSnapshot(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+                const unsubC = db.collection("campaigns").onSnapshot(snap => {
+                    const loadedCampaigns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setCampaigns(loadedCampaigns);
+
+                    // URLパラメータからIDを取得
+                    const params = new URLSearchParams(window.location.search);
+                    const campaignId = params.get('id');
+
+                    // IDがあり、かつデータが読み込まれていて、まだ選択されていない場合
+                    if (campaignId && loadedCampaigns.length > 0 && !selectedCampaign) {
+                        const target = loadedCampaigns.find(c => c.id === campaignId);
+                        if (target) {
+                            setSelectedCampaign(target);
+                            setView('detail');
+                        }
+                    }
+                });
                 const unsubR = db.collection("requests").onSnapshot(snap => setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
                 const unsubRep = db.collection("reports").onSnapshot(snap => setReports(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
                 return () => { unsubC(); unsubR(); unsubRep(); };
-            }, []);
+            }, []); // 初回のみ実行
 
             useEffect(() => {
                 localStorage.setItem("ms_isAdmin", isAdminMode);
@@ -259,9 +276,16 @@
             };
             const handleLogout = () => { setIsAdminMode(false); setView('home'); setLoginEmail(""); setLoginPass(""); };
             const handleCustomAmountChange = (e) => { setCustomAmountInput(e.target.value); setSelectedAmount(parseInt(e.target.value) || 0); };
+            
+            // ▼▼▼ 修正: シェア用URLを「現在開いているURL（ID付き）」に変更 ▼▼▼
             const shareText = (c) => encodeURIComponent(`【MySupporter】${c.team}の「${c.name}」を応援しよう！`);
-            const shareUrl = "https://mysupporter.example.com";
-            const copyToClipboard = () => navigator.clipboard.writeText(shareUrl).then(() => alert("リンクをコピーしました"));
+            // const shareUrl = "https://mysupporter.example.com"; // 削除
+            
+            const copyToClipboard = () => {
+                // アドレスバーのURLをそのままコピー
+                const currentUrl = window.location.href;
+                navigator.clipboard.writeText(currentUrl).then(() => alert("このページのURLをコピーしました！\nSNSなどでシェアしてください。"));
+            };
 
             const filteredCampaigns = useMemo(() => {
                 return campaigns.filter(c => {
@@ -363,6 +387,24 @@
                 alert("作成しました");
             };
 
+            // ▼▼▼ クリック時にURLパラメータを書き換える処理 ▼▼▼
+            const openDetail = (c) => {
+                setSelectedCampaign(c);
+                setView('detail');
+                setSupportStep(1);
+                setCustomAmountInput("");
+                // URLに ?id=xxx を追加（履歴に残す）
+                window.history.pushState({}, '', `?id=${c.id}`);
+                window.scrollTo(0,0);
+            };
+
+            const closeDetail = () => {
+                setView('home');
+                setSelectedCampaign(null);
+                // URLの ?id=xxx を削除
+                window.history.pushState({}, '', window.location.pathname);
+            };
+
             return (
                 <div className="min-h-screen flex flex-col relative">
                     <LegalModal isOpen={modal.open} title={modal.title} content={modal.content} onClose={() => setModal({open: false, title: '', content: null})} />
@@ -380,7 +422,7 @@
                     )}
 
                     <nav className="h-20 md:h-24 flex items-center justify-between px-4 md:px-12 sticky top-0 bg-[#f0f4f8]/90 backdrop-blur-xl z-50 border-b border-white/40 gap-4 md:gap-8">
-                        <div className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0" onClick={() => {setView('home'); setActiveTab('top'); setIsAdminMode(false);}}>
+                        <div className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0" onClick={() => {closeDetail(); setActiveTab('top'); setIsAdminMode(false);}}>
                             <div className="bg-blue-600 w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center italic font-black text-white shadow-lg text-lg md:text-xl">S</div>
                             <span className="font-black text-xl md:text-2xl tracking-tighter uppercase italic text-slate-900">MySUPPORTER <span className="text-[10px] text-blue-600 ml-2">Final</span></span>
                         </div>
@@ -392,7 +434,7 @@
                         )}
                         <div className="hidden lg:flex bg-white/50 p-1 rounded-full border border-white/60 shadow-sm">
                             {['campaigns', 'about', 'howitworks', 'thanks'].map(tab => (
-                                <button key={tab} onClick={() => {setView('home'); setActiveTab(tab);}} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-blue-600'}`}>
+                                <button key={tab} onClick={() => {closeDetail(); setActiveTab(tab);}} className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-blue-600'}`}>
                                     {tab === 'about' ? 'MySUPPORTERとは' : tab === 'campaigns' ? '支援一覧' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
                                 </button>
                             ))}
@@ -407,7 +449,7 @@
                         <div className="md:hidden sticky top-20 z-40 bg-[#f0f4f8]/95 border-b border-white/40 backdrop-blur-xl overflow-x-auto no-scrollbar">
                             <div className="flex px-4 py-3 gap-3 min-w-max">
                                 {['campaigns', 'about', 'howitworks', 'thanks'].map(tab => (
-                                    <button key={tab} onClick={() => {setView('home'); setActiveTab(tab); window.scrollTo({ top: 0, behavior: 'smooth' });}} 
+                                    <button key={tab} onClick={() => {closeDetail(); setActiveTab(tab); window.scrollTo({ top: 0, behavior: 'smooth' });}} 
                                         className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap 
                                         ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200'}`}>
                                         {tab === 'about' ? 'MySUPPORTERとは' : tab === 'campaigns' ? '支援一覧' : tab === 'howitworks' ? 'ご利用フロー' : '活動報告'}
@@ -615,7 +657,7 @@
                                                 Support Your<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400">Dream Team.</span>
                                             </h1>
                                             <p className="text-lg md:text-3xl font-black text-slate-500 mt-6 md:mt-8 tracking-widest">
-                                                そのワンクリックが、未来の力になる。<br />
+                                                そのワンクリックが、未来のチカラになる。<br />
                                                 モノが届く新しい応援のカタチ。
                                             </p>
                                             <div className="w-16 h-1 md:w-24 md:h-2 bg-gradient-to-r from-blue-600 to-cyan-400 mx-auto mt-12 md:mt-16 rounded-full"></div>
@@ -636,7 +678,9 @@
                                                 const isGoal = isGoalReached(c);
 
                                                 return (
-                                                    <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
+                                                    // ▼▼▼ 修正: クリック時の処理を変更。URLにパラメータを追加するopenDetail関数を呼ぶ ▼▼▼
+                                                    <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>openDetail(c)}>
+                                                        {/* ▼▼▼ 修正: スマホでは小さく(3xl)、PCでは大きく(6xl)表示するように変更 ▼▼▼ */}
                                                         {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-4 md:border-8 border-pink-500 text-pink-500 text-3xl md:text-6xl font-black p-2 md:p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                         
                                                         <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
@@ -667,7 +711,8 @@
                                             const isGoal = isGoalReached(c);
 
                                             return (
-                                                <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>{setSelectedCampaign(c); setView('detail'); setSupportStep(1); setCustomAmountInput(""); window.scrollTo(0,0);}}>
+                                                <div key={c.id} className="campaign-card glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-2 border border-white relative cursor-pointer overflow-hidden" onClick={()=>openDetail(c)}>
+                                                    {/* ▼▼▼ 修正: こちらも同様にレスポンシブ化 ▼▼▼ */}
                                                     {isGoal && <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-[2.5rem]"><div className="goal-stamp border-4 md:border-8 border-pink-500 text-pink-500 text-3xl md:text-6xl font-black p-2 md:p-4 rounded-xl rotate-[-15deg]">GOAL!!</div></div>}
                                                     
                                                     <div className="aspect-video bg-slate-100 rounded-[1rem] md:rounded-[2rem] overflow-hidden m-1 md:m-2 relative shadow-inner">
@@ -793,7 +838,7 @@
                             </>
                         ) : view === 'detail' ? (
                             <div className="max-w-6xl mx-auto p-2 md:p-4 pb-20">
-                                <button onClick={()=>setView('home')} className="text-slate-400 font-black text-xs mb-2 hover:text-blue-600">← BACK</button>
+                                <button onClick={()=>closeDetail()} className="text-slate-400 font-black text-xs mb-2 hover:text-blue-600">← BACK</button>
                                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                                     <div className="lg:col-span-3">
                                         <div className="glass-panel p-3 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-t-4 border-blue-600 relative overflow-hidden">
@@ -829,7 +874,7 @@
                                             
                                             <div className="mt-6 flex justify-end gap-2">
                                                 <button onClick={copyToClipboard} className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center hover:bg-blue-600 hover:text-white transition text-xs text-slate-500">🔗</button>
-                                                <a href={`https://twitter.com/intent/tweet?text=${shareText(selectedCampaign)}&url=${shareUrl}`} target="_blank" className="w-8 h-8 bg-black rounded-full flex items-center justify-center border border-slate-200 text-[10px] md:text-xs text-white">𝕏</a>
+                                                <a href={`https://twitter.com/intent/tweet?text=${shareText(selectedCampaign)}&url=${encodeURIComponent(window.location.href)}`} target="_blank" className="w-8 h-8 bg-black rounded-full flex items-center justify-center border border-slate-200 text-[10px] md:text-xs text-white">𝕏</a>
                                             </div>
                                         </div>
                                     </div>
