@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MySUPPORTER | Stylish UI Edition</title>
+    <title>MySUPPORTER | Social Share & Viral Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -126,7 +126,7 @@
         
         .section-heading { font-size: 2.5rem; font-weight: 900; color: #0f172a; margin-bottom: 2rem; text-align: center; letter-spacing: -0.04em; }
         
-        /* New Style for Feature Cards */
+        /* Feature & Step Cards */
         .feature-card {
             background: linear-gradient(145deg, #ffffff, #f8fafc);
             border: 1px solid #f1f5f9; border-radius: 1.5rem; padding: 2rem;
@@ -136,7 +136,6 @@
         .feature-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(59, 130, 246, 0.15); border-color: #bfdbfe; }
         .feature-icon { font-size: 2.5rem; background: -webkit-linear-gradient(45deg, #2563eb, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.5rem; }
         
-        /* Timeline Steps */
         .step-container { display: flex; flex-direction: column; gap: 2rem; position: relative; }
         @media(min-width: 768px) { .step-container { flex-direction: row; gap: 1rem; } }
         .step-card { flex: 1; background: white; border-radius: 1rem; padding: 2rem; position: relative; border: 1px solid #e2e8f0; z-index: 10; }
@@ -148,6 +147,22 @@
         }
         .step-arrow { display: none; position: absolute; top: 50%; right: -1rem; transform: translateY(-50%); font-size: 1.5rem; color: #cbd5e1; z-index: 5; }
         @media(min-width: 768px) { .step-arrow { display: block; } .step-container > div:last-child .step-arrow { display: none; } }
+
+        /* Social Share Buttons */
+        .share-button {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; padding: 0.75rem; border-radius: 0.5rem;
+            font-weight: 700; font-size: 0.9rem; gap: 0.5rem; transition: all 0.2s;
+            cursor: pointer;
+        }
+        .share-btn-x { background: #000; color: #fff; }
+        .share-btn-x:hover { opacity: 0.8; }
+        .share-btn-line { background: #06c755; color: #fff; }
+        .share-btn-line:hover { opacity: 0.9; }
+        .share-btn-native { background: linear-gradient(135deg, #2563eb, #8b5cf6); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .share-btn-native:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(37, 99, 235, 0.4); }
+        .share-btn-copy { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+        .share-btn-copy:hover { background: #e2e8f0; }
     </style>
 </head>
 <body>
@@ -317,8 +332,6 @@
                         </nav>
                         <div className="p-6 border-t border-slate-700"><button onClick={onLogout} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold transition">ログアウト</button></div>
                     </aside>
-                    
-                    {/* Mobile Nav for Admin */}
                     <div className="mobile-bottom-nav md:hidden">
                         {['dashboard','campaigns','requests','settings'].map(t=>(
                             <div key={t} onClick={()=>setTab(t)} className={`mobile-nav-item ${tab===t?'active':''}`}>
@@ -394,7 +407,7 @@
                             </div>
                         )}
                         
-                        {/* Edit Modal, Requests, Reports, etc. omitted for brevity but included in full code above */}
+                        {/* Edit Modal (Admin) */}
                         {editingCampaign && (
                             <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 fade-in">
                                 <div className="bg-white w-full max-w-lg rounded-t-2xl md:rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -484,6 +497,15 @@
                         }
                     } catch(e) {}
                 }
+                
+                // Permalink Logic
+                const hash = window.location.hash;
+                if(hash && hash.startsWith('#id=')) {
+                    const campaignId = hash.replace('#id=', '');
+                    const found = data.campaigns.find(c => c.id === campaignId);
+                    if(found) setDetailModal(found);
+                }
+
                 return () => { unsubC(); unsubR(); unsubRep(); unsubCfg(); };
             }, [data.campaigns.length]); 
 
@@ -512,7 +534,7 @@
                 }
                 
                 await db.collection("requests").add({...cleanEntry, status:'pending', date:new Date().toISOString()}); 
-                toast("申請を送信しました！審査をお待ちください。", "success"); 
+                toast("申請を送信しました！審査をお待ちください。"); 
                 setView('home'); 
             };
 
@@ -549,6 +571,26 @@
             };
 
             const cancelPayment = () => { sessionStorage.removeItem('payment_pending'); setPaymentProcess(null); };
+            
+            const handleShare = (campaign) => {
+                const shareData = {
+                    title: `MySUPPORTER - ${campaign.team}を応援しよう！`,
+                    text: `${campaign.team}が${campaign.name}の支援を募集中です。現在の支援額: ¥${campaign.current.toLocaleString()} / 目標: ¥${calcTargetFunc(campaign.price, data.config?.shippingFee, data.config?.feeRate).toLocaleString()}\n#MySUPPORTER #部活動支援`,
+                    url: `${window.location.origin}${window.location.pathname}#id=${campaign.id}`
+                };
+
+                if (navigator.share) {
+                    navigator.share(shareData).catch(console.error);
+                } else {
+                    // Fallback for PC
+                    alert("このブラウザではシェアボタン機能が制限されています。リンクをコピーして共有してください。");
+                }
+            };
+            
+            const copyLink = (id) => {
+                const url = `${window.location.origin}${window.location.pathname}#id=${id}`;
+                navigator.clipboard.writeText(url).then(() => toast("リンクをコピーしました"));
+            };
 
             if (loading) return <div className="h-screen flex items-center justify-center"><div className="loading-spinner"></div></div>;
             if (isAdminMode) return <AdminDashboard campaigns={data.campaigns} requests={data.requests} reports={data.reports} stats={{totalPayment: data.campaigns.reduce((a,c)=>a+safeInt(c.current),0), activeCount:data.campaigns.length}} db={db} systemConfig={data.config||{shippingFee:500, feeRate:1.1}} onLogout={logout} />;
@@ -568,7 +610,7 @@
                         <button onClick={()=>setView('apply')} className="text-xs font-bold border-2 border-slate-900 px-4 py-2 rounded-full hover:bg-slate-900 hover:text-white transition">掲載リクエスト</button>
                     </nav>
 
-                    {/* Mobile Nav User */}
+                    {/* Mobile Nav User (Optimized) */}
                     <div className="mobile-bottom-nav md:hidden">
                         {[{k:'top',i:'fa-house',l:'ホーム'},{k:'campaigns',i:'fa-flag',l:'支援'},{k:'about',i:'fa-circle-info',l:'概要'},{k:'howitworks',i:'fa-list-ol',l:'仕組み'},{k:'thanks',i:'fa-bullhorn',l:'報告'}].map(m => (
                             <div key={m.k} onClick={()=>{setView('home'); setActiveTab(m.k); window.scrollTo({top:0, behavior:'smooth'})}} className={`mobile-nav-item ${activeTab===m.k?'active':''}`}>
@@ -653,8 +695,8 @@
                                 {activeTab === 'top' && (
                                     <div className="min-h-screen flex items-center justify-center -mt-24 fade-in">
                                         <div className="rounded-[2rem] md:rounded-[3rem] overflow-hidden bg-slate-900 text-white w-full h-[85vh] flex items-center relative group shadow-2xl">
-                                            <img src="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2070" className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-[3s]"/>
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40"></div>
+                                            <img src="https://images.unsplash.com/photo-1434648957308-5e6a859697e8?q=80&w=2074&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-[3s]"/>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30"></div>
                                             <div className="relative z-10 p-8 md:p-12 max-w-4xl mx-auto text-center">
                                                 <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 leading-tight drop-shadow-2xl">勝利を、<br/>共に創る。</h1>
                                                 <p className="text-lg md:text-2xl font-bold opacity-90 mb-10 leading-relaxed drop-shadow-lg text-slate-200">部活動の「欲しい」を、みんなの「支援」で現実に。<br/>次世代のアスリートを支える新しいプラットフォーム。</p>
@@ -698,7 +740,7 @@
                                                 {[
                                                     {icon:"fa-users", t:"地域との絆", d:"物理的な距離を超え、母校や地元のチームを直接サポート。あなたの想いが選手の力になります。"},
                                                     {icon:"fa-shirt", t:"透明性のある支援", d:"現金ではなく「チームが必要とする用具」そのものを届けます。使途が明確で安心です。"},
-                                                    {icon:"fa-bolt", t:"可能性の最大化", d:"環境による格差をなくし、すべての学生/アスリートが全力を出せる未来を創造します。"}
+                                                    {icon:"fa-bolt", t:"可能性の最大化", d:"環境による格差をなくし、すべての学生アスリートが全力を出せる未来を創造します。"}
                                                 ].map((x,i)=>(
                                                     <div key={i} className="feature-card">
                                                         <div className="feature-icon"><i className={`fa-solid ${x.icon}`}></i></div>
@@ -711,8 +753,8 @@
                                             <div className="step-container max-w-4xl mx-auto text-left mt-8">
                                                 {[
                                                     {step:1, t:"チームを探す", d:"応援したい学校や部活動をプロジェクト一覧から見つけます。"},
-                                                    {step:2, t:"支援を贈る", d:"クレジットカードで、一口1,000円から手軽に支援ができます。"},
-                                                    {step:3, t:"物品が届く", d:"集まった資金で新品の用具を購入し、チームへ配送します。"}
+                                                    {step:2, t:"支援を贈る", d:"クレジットカードで、一口1,000円から手軽に支援金を贈れます。"},
+                                                    {step:3, t:"物品が届く", d:"集まった資金で新品の用具を購入し、チームへ寄贈・配送します。"}
                                                 ].map((s,k)=>(
                                                     <div key={k} className="step-card">
                                                         <div className="step-number">{s.step}</div>
@@ -798,7 +840,23 @@
                                         <div className="w-16 h-16 bg-slate-100 rounded-xl shrink-0 flex items-center justify-center overflow-hidden border"><SafeImage src={detailModal.image} className="w-full h-full object-contain" fallbackIcon="fa-shirt"/></div>
                                         <div><p className="text-xs font-bold text-blue-500 uppercase">希望物品</p><a href={detailModal.itemUrl||"#"} target="_blank" className="font-bold text-lg text-slate-800 hover:text-blue-600">{detailModal.name} <i className="fa-solid fa-arrow-up-right-from-square text-xs opacity-50"></i></a></div>
                                     </div>
-                                    <p className="text-slate-600 leading-loose whitespace-pre-wrap">{detailModal.description}</p>
+                                    <p className="text-slate-600 leading-loose whitespace-pre-wrap mb-8">{detailModal.description}</p>
+                                    
+                                    {/* SNS Share Area (New) */}
+                                    <div className="bg-slate-50 p-4 rounded-xl mb-6">
+                                        <p className="text-center text-xs font-bold text-slate-500 mb-3">このプロジェクトをシェアして応援！</p>
+                                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                                            {navigator.share ? (
+                                                <button onClick={()=>handleShare(detailModal)} className="share-button share-btn-native col-span-2 md:col-span-4"><i className="fa-solid fa-share-nodes"></i> シェアする</button>
+                                            ) : (
+                                                <>
+                                                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(detailModal.team + "を応援しよう！ #MySUPPORTER")}&url=${encodeURIComponent(window.location.origin + window.location.pathname + '#id=' + detailModal.id)}`} target="_blank" rel="noreferrer" className="share-button share-btn-x"><i className="fa-brands fa-x-twitter"></i> Post</a>
+                                                    <a href={`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin + window.location.pathname + '#id=' + detailModal.id)}`} target="_blank" rel="noreferrer" className="share-button share-btn-line"><i className="fa-brands fa-line"></i> LINE</a>
+                                                    <button onClick={()=>copyLink(detailModal.id)} className="share-button share-btn-copy col-span-2"><i className="fa-regular fa-copy"></i> リンクコピー</button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="p-4 md:p-6 border-t bg-slate-50"><button onClick={()=>{setSelectedCampaign(detailModal); setDetailModal(null); setPayStep(1);}} className="w-full bg-blue-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-blue-700 transition">このチームを支援する</button></div>
                             </div>
