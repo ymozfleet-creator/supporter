@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MySUPPORTER | Social Share & Viral Edition</title>
+    <title>MySUPPORTER | High Contrast & Social Boost Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -35,6 +35,7 @@
             flex-direction: column; 
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); 
             height: 100%;
+            position: relative;
         }
         .campaign-card:active { transform: scale(0.98); }
         @media(min-width: 768px) {
@@ -163,6 +164,21 @@
         .share-btn-native:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(37, 99, 235, 0.4); }
         .share-btn-copy { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
         .share-btn-copy:hover { background: #e2e8f0; }
+
+        /* Overlay Text Visibility */
+        .text-glow {
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
+        }
+        /* Quick Share Button on Card */
+        .card-share-btn {
+            position: absolute; top: 1rem; right: 1rem; z-index: 20;
+            width: 2.5rem; height: 2.5rem; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9); color: #1e293b;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .card-share-btn:hover { transform: scale(1.1); background: white; color: #2563eb; }
     </style>
 </head>
 <body>
@@ -225,7 +241,6 @@
             render() { if(this.state.hasError) return <div className="p-10 text-center">システムエラーが発生しました。リロードしてください。</div>; return this.props.children; }
         }
 
-        // ▼▼▼ ROBUST NUMBER PARSER ▼▼▼
         const safeInt = (v) => {
             if (v === null || v === undefined) return 0;
             if (typeof v === 'number') return Math.floor(v);
@@ -258,7 +273,6 @@
             reader.readAsDataURL(file);
         };
 
-        // --- Admin Dashboard ---
         const AdminDashboard = ({ campaigns, requests, reports, stats, db, systemConfig, onLogout }) => {
             const [tab, setTab] = useState('dashboard');
             const [search, setSearch] = useState('');
@@ -359,7 +373,6 @@
                                         <div><p className="stat-label">承認待ちアクション</p><p className="stat-value text-red-600">{requests.length} <span className="text-base text-slate-400 font-medium">件</span></p></div>
                                     </div>
                                 </div>
-                                
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                                     <h3 className="font-bold text-slate-700 mb-4 border-b pb-2">要対応タスク (ToDo)</h3>
                                     {requests.length === 0 && activeList.filter(c=>c.shippingStatus==='pending' && safeInt(c.current)>=calcTargetFunc(c.price, systemConfig.shippingFee, systemConfig.feeRate)).length === 0 && 
@@ -377,11 +390,11 @@
                                 </div>
                             </div>
                         )}
-
+                        {/* Other admin tabs... (omitted for brevity, same as previous) */}
                         {tab === 'campaigns' && (
                             <div className="space-y-6 fade-in">
                                 <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-slate-800">プロジェクト管理</h2><button onClick={exportCSV} className="bg-slate-700 text-white px-4 py-2 rounded text-xs font-bold hover:bg-slate-800 transition"><i className="fa-solid fa-file-csv mr-1"></i> CSV出力</button></div>
-                                <input className="input-field mb-4" placeholder="検索（チーム名、担当者名）..." value={search} onChange={e=>setSearch(e.target.value)} />
+                                <input className="input-field mb-4" placeholder="検索..." value={search} onChange={e=>setSearch(e.target.value)} />
                                 <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-bold border-b border-slate-200"><tr><th className="p-4">状態</th><th className="p-4">チーム名</th><th className="p-4">進捗状況</th><th className="p-4">配送ステータス</th><th className="p-4 text-right">操作</th></tr></thead>
@@ -406,8 +419,14 @@
                                 <div className="md:hidden space-y-4">{filteredList.map(c=><div key={c.id} className="mobile-admin-card"><div className="flex justify-between mb-2"><span className="font-bold">{c.team}</span><button onClick={()=>toggleShipping(c)} className={`text-xs px-3 py-1 rounded-full font-bold ${c.shippingStatus==='shipped'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>{c.shippingStatus==='shipped'?'発送済':'未発送'}</button></div><ProgressBar current={c.current} target={calcTargetFunc(c.price, systemConfig.shippingFee, systemConfig.feeRate)}/><div className="mt-4 flex justify-end gap-3"><button onClick={()=>setEditingCampaign({...c})} className="text-sm bg-slate-100 px-4 py-2 rounded font-bold text-slate-600">編集</button><button onClick={()=>trash(c.id)} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded font-bold">ゴミ箱</button></div></div>)}</div>
                             </div>
                         )}
+                        {/* Other admin sections remain identical to preserve functionality... */}
+                        {tab === 'requests' && <div className="fade-in"><h2 className="text-2xl font-bold text-slate-800 mb-6">承認待ち一覧</h2>{requests.length===0 && <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300 text-slate-400">現在、新しい申請はありません</div>}{requests.map(r=><div key={r.id} className="mobile-admin-card flex flex-col gap-3"><div><span className="font-bold text-lg text-slate-800">{r.team}</span><div className="text-sm text-slate-500 mt-1"><i className="fa-solid fa-user mr-1"></i> {r.contactName} <span className="mx-2">|</span> <i className="fa-solid fa-envelope mr-1"></i> {r.email}</div></div><div className="flex gap-2"><button onClick={()=>setEditingCampaign({...r})} className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-200 transition">詳細確認</button><button onClick={()=>approve(r)} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md transition">承認する</button></div></div>)}</div>}
+                        {tab === 'reports' && <div className="fade-in"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-slate-800">活動報告管理</h2><button onClick={()=>setIsCreatingReport(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md transition"><i className="fa-solid fa-plus mr-1"></i> 新規作成</button></div>{isCreatingReport && <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 animate-pulse"><h3 className="font-bold mb-4">新規レポート作成</h3><select className="input-field mb-3" onChange={e=>setNewReport({...newReport, teamId:e.target.value})}><option>チームを選択...</option>{activeList.map(c=><option key={c.id} value={c.id}>{c.team}</option>)}</select><input className="input-field mb-3" placeholder="タイトル" onChange={e=>setNewReport({...newReport, title:e.target.value})}/><textarea className="input-field h-32 mb-3" placeholder="本文" onChange={e=>setNewReport({...newReport, content:e.target.value})}/><input type="file" onChange={e=>handleImageUpload(e, d=>setNewReport({...newReport, image:d}))}/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setIsCreatingReport(false)} className="text-slate-500 font-bold px-4 py-2 hover:bg-slate-100 rounded">キャンセル</button><button onClick={createReport} className="bg-blue-600 text-white font-bold px-6 py-2 rounded hover:bg-blue-700 shadow">公開する</button></div></div>}{reports.map(r=><div key={r.id} className="mobile-admin-card flex justify-between items-center"><div><span className="font-bold">{r.title}</span><br/><span className="text-xs text-slate-400">{r.date} - {r.team}</span></div><div className="flex gap-2"><button onClick={()=>setEditingReport({...r})} className="text-slate-400 hover:text-blue-500 px-2"><i className="fa-solid fa-pen"></i></button><button onClick={()=>deleteReport(r.id)} className="text-slate-400 hover:text-red-500 px-2"><i className="fa-solid fa-trash"></i></button></div></div>)}</div>}
+                        {editingReport && <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4"><div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl"><h3 className="font-bold mb-4">レポート編集</h3><input className="input-field mb-3" value={editingReport.title} onChange={e=>setEditingReport({...editingReport, title:e.target.value})}/><textarea className="input-field h-32 mb-3" value={editingReport.content} onChange={e=>setEditingReport({...editingReport, content:e.target.value})}/><div className="flex justify-end gap-2"><button onClick={()=>setEditingReport(null)} className="text-slate-500 font-bold px-4 py-2 hover:bg-slate-100 rounded">キャンセル</button><button onClick={updateReport} className="bg-blue-600 text-white font-bold px-6 py-2 rounded hover:bg-blue-700">保存</button></div></div></div>}
+                        {tab === 'settings' && <div className="fade-in"><h2 className="text-2xl font-bold text-slate-800 mb-6">システム設定</h2><div className="mobile-admin-card"><div className="grid grid-cols-2 gap-6 mb-6"><div><label className="text-sm font-bold text-slate-600 block mb-2">一律送料 (円)</label><input type="number" className="input-field" value={configForm.shippingFee} onChange={e=>setConfigForm({...configForm, shippingFee:safeInt(e.target.value)})}/></div><div><label className="text-sm font-bold text-slate-600 block mb-2">システム手数料係数 (例: 1.1)</label><input type="number" step="0.01" className="input-field" value={configForm.feeRate} onChange={e=>setConfigForm({...configForm, feeRate:parseFloat(e.target.value)})}/></div></div><button onClick={()=>db.collection("config").doc("main").set(configForm).then(()=>toast("設定を保存しました"))} className="w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition shadow-lg">設定を保存</button></div></div>}
+                        {tab === 'trash' && <div className="fade-in"><h2 className="text-2xl font-bold text-slate-800 mb-6">ゴミ箱 (Deleted)</h2>{trashList.length===0 && <div className="text-center py-12 text-slate-400">ゴミ箱は空です</div>}{trashList.map(c=><div key={c.id} className="mobile-admin-card flex justify-between items-center opacity-75 hover:opacity-100"><div><span className="font-bold">{c.team}</span></div><div className="flex gap-2"><button onClick={()=>restore(c.id)} className="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold hover:bg-green-200">復元</button><button onClick={()=>del(c.id)} className="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-200">完全削除</button></div></div>)}</div>}
                         
-                        {/* Edit Modal (Admin) */}
+                        {/* Edit Modal (Admin) - Kept same */}
                         {editingCampaign && (
                             <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 fade-in">
                                 <div className="bg-white w-full max-w-lg rounded-t-2xl md:rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -435,18 +454,11 @@
                                 </div>
                             </div>
                         )}
-                        
-                        {tab === 'requests' && <div className="fade-in"><h2 className="text-2xl font-bold text-slate-800 mb-6">承認待ち一覧</h2>{requests.length===0 && <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300 text-slate-400">現在、新しい申請はありません</div>}{requests.map(r=><div key={r.id} className="mobile-admin-card flex flex-col gap-3"><div><span className="font-bold text-lg text-slate-800">{r.team}</span><div className="text-sm text-slate-500 mt-1"><i className="fa-solid fa-user mr-1"></i> {r.contactName} <span className="mx-2">|</span> <i className="fa-solid fa-envelope mr-1"></i> {r.email}</div></div><div className="flex gap-2"><button onClick={()=>setEditingCampaign({...r})} className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-200 transition">詳細確認</button><button onClick={()=>approve(r)} className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md transition">承認する</button></div></div>)}</div>}
-                        {tab === 'reports' && <div className="fade-in"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-slate-800">活動報告管理</h2><button onClick={()=>setIsCreatingReport(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md transition"><i className="fa-solid fa-plus mr-1"></i> 新規作成</button></div>{isCreatingReport && <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 animate-pulse"><h3 className="font-bold mb-4">新規レポート作成</h3><select className="input-field mb-3" onChange={e=>setNewReport({...newReport, teamId:e.target.value})}><option>チームを選択...</option>{activeList.map(c=><option key={c.id} value={c.id}>{c.team}</option>)}</select><input className="input-field mb-3" placeholder="タイトル" onChange={e=>setNewReport({...newReport, title:e.target.value})}/><textarea className="input-field h-32 mb-3" placeholder="本文" onChange={e=>setNewReport({...newReport, content:e.target.value})}/><input type="file" onChange={e=>handleImageUpload(e, d=>setNewReport({...newReport, image:d}))}/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setIsCreatingReport(false)} className="text-slate-500 font-bold px-4 py-2 hover:bg-slate-100 rounded">キャンセル</button><button onClick={createReport} className="bg-blue-600 text-white font-bold px-6 py-2 rounded hover:bg-blue-700 shadow">公開する</button></div></div>}{reports.map(r=><div key={r.id} className="mobile-admin-card flex justify-between items-center"><div><span className="font-bold">{r.title}</span><br/><span className="text-xs text-slate-400">{r.date} - {r.team}</span></div><div className="flex gap-2"><button onClick={()=>setEditingReport({...r})} className="text-slate-400 hover:text-blue-500 px-2"><i className="fa-solid fa-pen"></i></button><button onClick={()=>deleteReport(r.id)} className="text-slate-400 hover:text-red-500 px-2"><i className="fa-solid fa-trash"></i></button></div></div>)}</div>}
-                        {editingReport && <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4"><div className="bg-white w-full max-w-lg rounded-xl p-6 shadow-2xl"><h3 className="font-bold mb-4">レポート編集</h3><input className="input-field mb-3" value={editingReport.title} onChange={e=>setEditingReport({...editingReport, title:e.target.value})}/><textarea className="input-field h-32 mb-3" value={editingReport.content} onChange={e=>setEditingReport({...editingReport, content:e.target.value})}/><div className="flex justify-end gap-2"><button onClick={()=>setEditingReport(null)} className="text-slate-500 font-bold px-4 py-2 hover:bg-slate-100 rounded">キャンセル</button><button onClick={updateReport} className="bg-blue-600 text-white font-bold px-6 py-2 rounded hover:bg-blue-700">保存</button></div></div></div>}
-                        {tab === 'settings' && <div className="fade-in"><h2 className="text-2xl font-bold text-slate-800 mb-6">システム設定</h2><div className="mobile-admin-card"><div className="grid grid-cols-2 gap-6 mb-6"><div><label className="text-sm font-bold text-slate-600 block mb-2">一律送料 (円)</label><input type="number" className="input-field" value={configForm.shippingFee} onChange={e=>setConfigForm({...configForm, shippingFee:safeInt(e.target.value)})}/></div><div><label className="text-sm font-bold text-slate-600 block mb-2">システム手数料係数 (例: 1.1)</label><input type="number" step="0.01" className="input-field" value={configForm.feeRate} onChange={e=>setConfigForm({...configForm, feeRate:parseFloat(e.target.value)})}/></div></div><button onClick={()=>db.collection("config").doc("main").set(configForm).then(()=>toast("設定を保存しました"))} className="w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition shadow-lg">設定を保存</button></div></div>}
-                        {tab === 'trash' && <div className="fade-in"><h2 className="text-2xl font-bold text-slate-800 mb-6">ゴミ箱 (Deleted)</h2>{trashList.length===0 && <div className="text-center py-12 text-slate-400">ゴミ箱は空です</div>}{trashList.map(c=><div key={c.id} className="mobile-admin-card flex justify-between items-center opacity-75 hover:opacity-100"><div><span className="font-bold">{c.team}</span></div><div className="flex gap-2"><button onClick={()=>restore(c.id)} className="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold hover:bg-green-200">復元</button><button onClick={()=>del(c.id)} className="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-200">完全削除</button></div></div>)}</div>}
                     </main>
                 </div>
             );
         };
 
-        // --- Main App ---
         const MainApp = () => {
             const [view, setView] = useState('home');
             const [activeTab, setActiveTab] = useState('top');
@@ -498,7 +510,6 @@
                     } catch(e) {}
                 }
                 
-                // Permalink Logic
                 const hash = window.location.hash;
                 if(hash && hash.startsWith('#id=')) {
                     const campaignId = hash.replace('#id=', '');
@@ -582,7 +593,6 @@
                 if (navigator.share) {
                     navigator.share(shareData).catch(console.error);
                 } else {
-                    // Fallback for PC
                     alert("このブラウザではシェアボタン機能が制限されています。リンクをコピーして共有してください。");
                 }
             };
@@ -610,7 +620,6 @@
                         <button onClick={()=>setView('apply')} className="text-xs font-bold border-2 border-slate-900 px-4 py-2 rounded-full hover:bg-slate-900 hover:text-white transition">掲載リクエスト</button>
                     </nav>
 
-                    {/* Mobile Nav User (Optimized) */}
                     <div className="mobile-bottom-nav md:hidden">
                         {[{k:'top',i:'fa-house',l:'ホーム'},{k:'campaigns',i:'fa-flag',l:'支援'},{k:'about',i:'fa-circle-info',l:'概要'},{k:'howitworks',i:'fa-list-ol',l:'仕組み'},{k:'thanks',i:'fa-bullhorn',l:'報告'}].map(m => (
                             <div key={m.k} onClick={()=>{setView('home'); setActiveTab(m.k); window.scrollTo({top:0, behavior:'smooth'})}} className={`mobile-nav-item ${activeTab===m.k?'active':''}`}>
@@ -691,15 +700,15 @@
                     <div className="max-w-6xl mx-auto p-4 md:pt-24 space-y-20 pt-20">
                         {view==='home' && (
                             <>
-                                {/* Top Hero (Coolest Impact) */}
+                                {/* Top Hero (Visibility Fixed) */}
                                 {activeTab === 'top' && (
                                     <div className="min-h-screen flex items-center justify-center -mt-24 fade-in">
                                         <div className="rounded-[2rem] md:rounded-[3rem] overflow-hidden bg-slate-900 text-white w-full h-[85vh] flex items-center relative group shadow-2xl">
-                                            <img src="https://images.unsplash.com/photo-1434648957308-5e6a859697e8?q=80&w=2074&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-[3s]"/>
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30"></div>
+                                            <img src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=2070" className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-[3s]"/>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
                                             <div className="relative z-10 p-8 md:p-12 max-w-4xl mx-auto text-center">
-                                                <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 leading-tight drop-shadow-2xl">勝利を、<br/>共に創る。</h1>
-                                                <p className="text-lg md:text-2xl font-bold opacity-90 mb-10 leading-relaxed drop-shadow-lg text-slate-200">部活動の「欲しい」を、みんなの「支援」で現実に。<br/>次世代のアスリートを支える新しいプラットフォーム。</p>
+                                                <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 leading-tight drop-shadow-2xl text-glow">勝利を、<br/>共に創る。</h1>
+                                                <p className="text-lg md:text-2xl font-bold opacity-100 mb-10 leading-relaxed drop-shadow-xl text-slate-100 text-glow">部活動の「欲しい」を、みんなの「支援」で現実に。<br/>次世代のアスリートを支える新しいプラットフォーム。</p>
                                                 <button onClick={()=>{setActiveTab('campaigns'); window.scrollTo({top:0, behavior:'smooth'})}} className="bg-white text-slate-900 px-10 py-5 rounded-full font-black text-lg hover:bg-blue-50 transition transform hover:scale-105 shadow-2xl border-4 border-transparent hover:border-blue-200">プロジェクトを見る</button>
                                             </div>
                                         </div>
@@ -718,6 +727,7 @@
                                                         <SafeImage src={c.teamImage} className="w-full h-full object-cover"/>
                                                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-4 pt-16"><h3 className="text-white font-bold text-xl">{c.team}</h3></div>
                                                         {isGoal && <div className="goal-overlay-cool"><div className="goal-stamp-cool">GOAL</div></div>}
+                                                        <button onClick={(e)=>{e.stopPropagation(); handleShare(c);}} className="card-share-btn"><i className="fa-solid fa-share-nodes"></i></button>
                                                     </div>
                                                     <div className="p-5 flex flex-col gap-4 flex-grow">
                                                         <div><span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded">希望物品</span><p className="font-bold text-slate-800 mt-1 line-clamp-1">{c.name}</p></div>
@@ -730,7 +740,7 @@
                                     </div>
                                 )}
 
-                                {/* Stylish About & How It Works */}
+                                {/* Stylish About & How It Works (Same as before) */}
                                 {(activeTab === 'about' || activeTab === 'howitworks') && (
                                     <div className="text-center max-w-5xl mx-auto py-12 fade-in">
                                         <h2 className="section-heading">{activeTab==='about'?'MySUPPORTERとは':'支援の仕組み'}</h2>
@@ -826,7 +836,7 @@
 
                     {showLogin && <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-6"><div className="bg-white p-8 rounded-2xl w-full max-w-sm space-y-4"><h3 className="font-bold text-center">管理者ログイン</h3><input className="input-field" placeholder="Email" onChange={e=>setLoginCreds({...loginCreds, email:e.target.value})}/><input className="input-field" type="password" placeholder="Pass" onChange={e=>setLoginCreds({...loginCreds, pass:e.target.value})}/><button onClick={login} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">ログイン</button><button onClick={()=>setShowLogin(false)} className="w-full text-center text-xs">キャンセル</button></div></div>}
                     
-                    {/* Detail Modal */}
+                    {/* Detail Modal (SNS Share included) */}
                     {detailModal && (
                         <div className="fixed inset-0 z-[70] bg-slate-900/80 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 fade-in" onClick={()=>setDetailModal(null)}>
                             <div className="bg-white w-full max-w-2xl rounded-t-2xl md:rounded-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]" onClick={e=>e.stopPropagation()}>
@@ -842,12 +852,12 @@
                                     </div>
                                     <p className="text-slate-600 leading-loose whitespace-pre-wrap mb-8">{detailModal.description}</p>
                                     
-                                    {/* SNS Share Area (New) */}
+                                    {/* SNS Share Area */}
                                     <div className="bg-slate-50 p-4 rounded-xl mb-6">
                                         <p className="text-center text-xs font-bold text-slate-500 mb-3">このプロジェクトをシェアして応援！</p>
                                         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                                             {navigator.share ? (
-                                                <button onClick={()=>handleShare(detailModal)} className="share-button share-btn-native col-span-2 md:col-span-4"><i className="fa-solid fa-share-nodes"></i> シェアする</button>
+                                                <button onClick={()=>handleShare(detailModal)} className="share-button share-btn-native col-span-2 md:col-span-4"><i className="fa-solid fa-share-nodes"></i> シェア（Insta/X/LINE）</button>
                                             ) : (
                                                 <>
                                                     <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(detailModal.team + "を応援しよう！ #MySUPPORTER")}&url=${encodeURIComponent(window.location.origin + window.location.pathname + '#id=' + detailModal.id)}`} target="_blank" rel="noreferrer" className="share-button share-btn-x"><i className="fa-brands fa-x-twitter"></i> Post</a>
