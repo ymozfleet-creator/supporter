@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MySUPPORTER | Emotion & Compact Usability Edition</title>
+    <title>MySUPPORTER | Cool Sport & Mobile Clear Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -46,7 +46,7 @@
         .input-field { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 0.75rem; padding: 1rem; width: 100%; outline: none; transition: 0.2s; font-size: 16px; font-weight: 600; color: #334155; }
         .input-field:focus { border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
         
-        /* Search Input specific */
+        /* Search Input */
         .search-input-container { position: relative; width: 100%; }
         .search-input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1.2rem; }
         .search-input { padding-left: 3rem; background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -77,7 +77,7 @@
         .loading-spinner { border: 4px solid rgba(59, 130, 246, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 3rem; height: 3rem; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Admin Dashboard Improvements */
+        /* Admin Dashboard */
         .admin-layout { display: flex; min-height: 100vh; background-color: #f1f5f9; padding-bottom: 0; }
         .admin-sidebar { width: 260px; background: #0f172a; color: #e2e8f0; position: fixed; top: 0; bottom: 0; left: 0; z-index: 50; display: flex; flex-direction: column; }
         .admin-content { margin-left: 260px; padding: 2rem; width: calc(100% - 260px); }
@@ -97,7 +97,7 @@
         .stat-value { font-size: 2.2rem; font-weight: 800; color: #0f172a; letter-spacing: -0.05em; line-height: 1; margin-top: 0.5rem; }
         .stat-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Mobile Nav (Updated) */
+        /* Mobile Nav */
         .mobile-bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px);
@@ -133,22 +133,44 @@
         
         .section-heading { font-size: 2.5rem; font-weight: 900; color: #0f172a; margin-bottom: 2rem; text-align: center; letter-spacing: -0.04em; }
         
-        /* Feature & Step Cards (Mobile Compact Horizontal Scroll) */
+        /* Feature & Step Cards (Responsive) */
         .feature-card {
             background: linear-gradient(145deg, #ffffff, #f8fafc);
             border: 1px solid #f1f5f9; border-radius: 1.5rem; padding: 2rem;
             box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); transition: all 0.3s;
-            text-align: center; height: 100%; min-width: 280px; /* For mobile scroll */
+            text-align: center; height: 100%;
         }
+        
+        /* Mobile Compact Styles */
+        @media(max-width: 768px) {
+            .feature-card {
+                padding: 1.5rem; text-align: left; display: flex; align-items: center; gap: 1rem;
+                min-height: auto; border-radius: 1rem; margin-bottom: 1rem;
+            }
+            .feature-icon { font-size: 2rem !important; margin-bottom: 0 !important; width: 3rem; text-align: center; flex-shrink: 0; }
+            .feature-content { flex: 1; }
+            .feature-title { margin-bottom: 0.25rem !important; font-size: 1.1rem !important; }
+            .feature-desc { font-size: 0.8rem !important; line-height: 1.4 !important; margin-bottom: 0 !important; }
+            
+            .step-container { margin-top: 1rem; gap: 1rem !important; }
+            .step-card { 
+                padding: 1.25rem 1.25rem 1.25rem 4rem !important; 
+                text-align: left; border-radius: 1rem; 
+            }
+            .step-number { 
+                left: 1rem !important; top: 50% !important; transform: translateY(-50%); 
+                width: 2.5rem !important; height: 2.5rem !important; font-size: 1rem !important;
+            }
+            .step-arrow { display: block !important; top: auto; bottom: -1.2rem; left: 50%; right: auto; transform: translateX(-50%) rotate(90deg); color: #cbd5e1; font-size: 1rem; }
+            .step-container > div:last-child .step-arrow { display: none !important; }
+        }
+
         .feature-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(59, 130, 246, 0.15); border-color: #bfdbfe; }
         .feature-icon { font-size: 2.5rem; background: -webkit-linear-gradient(45deg, #2563eb, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.5rem; }
         
         .step-container { display: flex; flex-direction: column; gap: 2rem; position: relative; }
         @media(min-width: 768px) { .step-container { flex-direction: row; gap: 1rem; } }
-        .step-card { 
-            flex: 1; background: white; border-radius: 1rem; padding: 2rem; position: relative; border: 1px solid #e2e8f0; z-index: 10;
-            min-width: 280px; /* For mobile scroll */
-        }
+        .step-card { flex: 1; background: white; border-radius: 1rem; padding: 2rem; position: relative; border: 1px solid #e2e8f0; z-index: 10; }
         .step-number { 
             position: absolute; top: -1.5rem; left: 1.5rem; width: 3rem; height: 3rem; 
             background: #0f172a; color: white; border-radius: 50%; 
@@ -157,16 +179,6 @@
         }
         .step-arrow { display: none; position: absolute; top: 50%; right: -1rem; transform: translateY(-50%); font-size: 1.5rem; color: #cbd5e1; z-index: 5; }
         @media(min-width: 768px) { .step-arrow { display: block; } .step-container > div:last-child .step-arrow { display: none; } }
-
-        /* Mobile Scroll Snap */
-        .mobile-snap-scroll {
-            display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 2rem; margin: 0 -1rem; padding-left: 1rem; padding-right: 1rem;
-            scroll-snap-type: x mandatory;
-        }
-        .mobile-snap-scroll > * { scroll-snap-align: center; }
-        @media(min-width: 768px) {
-            .mobile-snap-scroll { display: grid; overflow-x: visible; margin: 0; padding: 0; }
-        }
 
         /* Social Share Buttons */
         .share-button {
@@ -184,11 +196,7 @@
         .share-btn-copy { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
         .share-btn-copy:hover { background: #e2e8f0; }
 
-        /* Overlay Text Visibility */
-        .text-glow {
-            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.9);
-        }
-        /* Quick Share Button on Card */
+        .text-glow { text-shadow: 0 4px 12px rgba(0, 0, 0, 0.9); }
         .card-share-btn {
             position: absolute; top: 1rem; right: 1rem; z-index: 20;
             width: 2.5rem; height: 2.5rem; border-radius: 50%;
@@ -232,17 +240,26 @@
 
         const { useState, useMemo, useEffect, Component, createContext, useContext } = React;
 
-        // --- UPDATED LEGAL CONTENT (2026/02/05) ---
+        // --- LEGAL CONTENT ---
         const docContent = {
             terms: `【MySUPPORTER 利用規約】\n\n第1条（適用・同意）\n1. 本規約は、Ark inc.（以下「当社」）が提供する「MySUPPORTER」（以下「本サービス」）の利用条件を定めるものです。\n2. ユーザーは、本サービスを利用することにより、本規約の全ての条項に同意したものとみなされます。\n\n第2条（サービスの本質）\n本サービスは、チームへの物品支援を目的としたクラウドファンディング型プラットフォームです。サポーターからの資金は「寄付」ではなく、当社に対する「物品購入および配送業務の委託費用」として取り扱われます。\n\n第3条（決済および返金不可）\n1. 決済完了をもって、サポーターと当社の間で業務委託契約が成立します。\n2. サービスの性質上、決済完了後のサポーター都合によるキャンセル、返金、支援金額の変更は、いかなる理由（入力ミス、心変わり、チームの活動状況変化等を含む）があっても一切応じられません。\n3. 当社は、チームへの物品提供が完了した時点で、その業務を完遂したものとみなします。\n\n第4条（手数料・残余金）\n支援金には、物品代金、配送費に加え、システム利用料および決済手数料が含まれます。余剰金が発生した場合、それは当社の運営手数料として充当され、サポーターへの返還は行われません。\n\n第5条（免責事項の強化）\n1. 当社は、システム障害、通信回線の不具合、第三者による不正アクセス、天災地変等により本サービスの提供が中断・停止した場合でも、それによりユーザーに生じた損害について一切の責任を負いません。\n2. チームの解散、活動休止、連絡不通等により物品の提供が困難となった場合、当社は代替支援等の措置を講じることがありますが、支援金の返金義務は負わないものとします。\n3. いかなる場合においても、当社の損害賠償責任は、当該ユーザーが過去1ヶ月間に支払った支援総額を上限とします。\n\n第6条（権利の帰属）\n本サービスに投稿された文章、画像、動画等のコンテンツに関する著作権は投稿者に帰属しますが、当社はこれらを本サービスの宣伝、運営、改善のために、無償かつ無期限に自由に利用（複製、編集、公開等）できるものとします。\n\n第7条（禁止事項・解除）\n当社は、ユーザーが本規約に違反した場合、または不適切と判断した場合、事前の通知なく利用停止、登録抹消、法的措置を講じることができます。\n\n第8条（管轄）\n本サービスに関する紛争は、東京地方裁判所を第一審の専属的合意管轄裁判所とします。\n\n2026年2月5日 最新改定`,
             privacy: `【プライバシーポリシー】\n\nArk inc.（以下「当社」）は、個人情報を以下の通り厳格に管理します。\n\n1. 取得情報\n氏名、住所、電話番号、メールアドレス、支援履歴、アクセスログ等。\n※クレジットカード情報は決済代行会社が管理し、当社サーバーでは保持しません。\n\n2. 利用目的\n- 支援物品の配送および連絡\n- サービス運営およびセキュリティ維持\n- 統計データの作成およびマーケティング\n- 法的義務の履行\n\n3. 第三者提供\n法令に基づく場合、または業務委託先（配送会社等）への提供を除き、同意なく第三者に提供しません。\n\n4. 免責\nハッカー等の不正アクセスにより情報が漏洩した場合、当社はセキュリティ対策を講じていた限りにおいて免責されるものとします。\n\n2026年2月5日 最新改定`,
             tokusho: `【特定商取引法に基づく表記】\n\n■事業者名\nArk inc.\n\n■代表者\n茂住 雄太\n\n■所在地\n東京都（特定商取引法に基づき、請求があり次第遅滞なく開示します）\n\n■お問い合わせ\ninfo@mysupporter.jp\n\n■販売価格\n各プロジェクトページに表示（税込）\n\n■商品代金以外の費用\nなし（送料・手数料込）\n\n■支払方法\nクレジットカード決済\n\n■提供時期\nプロジェクト終了後、速やかに物品を手配・配送（通常1〜2ヶ月）\n\n■キャンセル特約\n【返金不可】\n本サービスは寄付的性質を持つクラウドファンディングであり、決済完了後のお客様都合によるキャンセル・返金は一切お受けできません。\n\n■不良品対応\n配送された物品に重大な欠陥がある場合に限り、チーム代表者からの連絡に基づき交換対応を行います（到着後7日以内）。`
         };
 
+        // ▼ Improved SafeImage to handle HTML snippets (Rakuten tags etc) ▼
         const SafeImage = ({ src, alt, className, fallbackIcon = "fa-image" }) => {
             const [error, setError] = useState(false);
             useEffect(() => { setError(false); }, [src]);
-            if (!src || error) return <div className={`${className} flex items-center justify-center bg-slate-100 text-slate-300`}><i className={`fa-solid ${fallbackIcon} text-2xl`}></i></div>;
+
+            if (!src) return <div className={`${className} flex items-center justify-center bg-slate-100 text-slate-300`}><i className={`fa-solid ${fallbackIcon} text-2xl`}></i></div>;
+
+            // Handle HTML Tags (e.g. Rakuten Affiliate Source)
+            if (typeof src === 'string' && src.trim().startsWith('<')) {
+                return <div className={`${className} flex items-center justify-center overflow-hidden [&>a>img]:w-full [&>a>img]:h-full [&>a>img]:object-cover [&>img]:w-full [&>img]:h-full [&>img]:object-cover bg-white`} dangerouslySetInnerHTML={{ __html: src }} />;
+            }
+
+            if (error) return <div className={`${className} flex items-center justify-center bg-slate-100 text-slate-300`}><i className={`fa-solid ${fallbackIcon} text-2xl`}></i></div>;
             return <img src={src} alt={alt} className={className} onError={()=>setError(true)} referrerPolicy="no-referrer" />;
         };
 
@@ -260,7 +277,6 @@
             render() { if(this.state.hasError) return <div className="p-10 text-center">システムエラーが発生しました。リロードしてください。</div>; return this.props.children; }
         }
 
-        // ▼▼▼ ROBUST NUMBER PARSER ▼▼▼
         const safeInt = (v) => {
             if (v === null || v === undefined) return 0;
             if (typeof v === 'number') return Math.floor(v);
@@ -293,7 +309,6 @@
             reader.readAsDataURL(file);
         };
 
-        // --- Admin Dashboard ---
         const AdminDashboard = ({ campaigns, requests, reports, stats, db, systemConfig, onLogout }) => {
             const [tab, setTab] = useState('dashboard');
             const [search, setSearch] = useState('');
@@ -394,7 +409,6 @@
                                         <div><p className="stat-label">承認待ちアクション</p><p className="stat-value text-red-600">{requests.length} <span className="text-base text-slate-400 font-medium">件</span></p></div>
                                     </div>
                                 </div>
-                                
                                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                                     <h3 className="font-bold text-slate-700 mb-4 border-b pb-2">要対応タスク (ToDo)</h3>
                                     {requests.length === 0 && activeList.filter(c=>c.shippingStatus==='pending' && safeInt(c.current)>=calcTargetFunc(c.price, systemConfig.shippingFee, systemConfig.feeRate)).length === 0 && 
@@ -416,7 +430,7 @@
                         {tab === 'campaigns' && (
                             <div className="space-y-6 fade-in">
                                 <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-slate-800">プロジェクト管理</h2><button onClick={exportCSV} className="bg-slate-700 text-white px-4 py-2 rounded text-xs font-bold hover:bg-slate-800 transition"><i className="fa-solid fa-file-csv mr-1"></i> CSV出力</button></div>
-                                <input className="input-field mb-4" placeholder="検索（チーム名、担当者名）..." value={search} onChange={e=>setSearch(e.target.value)} />
+                                <input className="input-field mb-4" placeholder="検索..." value={search} onChange={e=>setSearch(e.target.value)} />
                                 <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-bold border-b border-slate-200"><tr><th className="p-4">状態</th><th className="p-4">チーム名</th><th className="p-4">進捗状況</th><th className="p-4">配送ステータス</th><th className="p-4 text-right">操作</th></tr></thead>
@@ -442,7 +456,7 @@
                             </div>
                         )}
                         
-                        {/* Edit Modal (Admin) */}
+                        {/* Edit Modal (Admin) with Affiliate Code Support */}
                         {editingCampaign && (
                             <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 fade-in">
                                 <div className="bg-white w-full max-w-lg rounded-t-2xl md:rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -464,7 +478,20 @@
                                         )}
                                         <div><label className="text-[10px] font-bold text-slate-500 block mb-1">目標金額設定</label><input type="number" className="input-field" value={editingCampaign.price||editingCampaign.estimatedPrice} onChange={e=>setEditingCampaign({...editingCampaign, [editingCampaign.status==='pending'?'estimatedPrice':'price']: safeInt(e.target.value)})} /></div>
                                         <div><label className="text-[10px] font-bold text-slate-500 block mb-1">Square決済URL</label><input className="input-field" value={editingCampaign.paymentUrl||""} onChange={e=>setEditingCampaign({...editingCampaign, paymentUrl:e.target.value})} placeholder="https://..." /></div>
-                                        <div><label className="text-[10px] font-bold text-slate-500 block mb-1">チーム画像</label><input type="file" onChange={e=>handleImageUpload(e, d=>setEditingCampaign({...editingCampaign, teamImage:d}))} className="text-sm" /></div>
+                                        
+                                        {/* Image Upload & Code Input */}
+                                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                            <label className="text-[10px] font-bold text-slate-500 block mb-2">チーム画像設定</label>
+                                            <input type="file" onChange={e=>handleImageUpload(e, d=>setEditingCampaign({...editingCampaign, teamImage:d}))} className="text-xs mb-3 w-full" />
+                                            <div className="text-center text-[10px] text-slate-400 font-bold mb-2">- OR -</div>
+                                            <label className="text-[10px] font-bold text-slate-500 block mb-1">画像ソースコード (楽天アフィリエイトタグ等)</label>
+                                            <textarea 
+                                                className="input-field h-24 text-xs font-mono text-slate-600" 
+                                                placeholder='<a href="..."><img src="..."></a>' 
+                                                value={editingCampaign.teamImage && editingCampaign.teamImage.startsWith('<') ? editingCampaign.teamImage : ""} 
+                                                onChange={e=>setEditingCampaign({...editingCampaign, teamImage:e.target.value})} 
+                                            />
+                                        </div>
                                     </div>
                                     <div className="flex gap-3 pt-6 border-t"><button onClick={()=>setEditingCampaign(null)} className="flex-1 py-3 rounded-lg font-bold text-slate-500 bg-slate-100 hover:bg-slate-200">キャンセル</button><button onClick={saveDetailEdit} className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg">保存</button></div>
                                 </div>
@@ -497,7 +524,7 @@
             const [paymentProcess, setPaymentProcess] = useState(null); 
             const [modal, setModal] = useState({open:false, title:"", content:""});
             const [agreed, setAgreed] = useState(false);
-            const [userSearch, setUserSearch] = useState(""); // New: User Search State
+            const [userSearch, setUserSearch] = useState("");
             const toast = useToast();
 
             // Safety Loading Timeout
@@ -727,7 +754,7 @@
                                 {activeTab === 'top' && (
                                     <div className="min-h-screen flex items-center justify-center -mt-24 fade-in">
                                         <div className="rounded-[2rem] md:rounded-[3rem] overflow-hidden bg-slate-900 text-white w-full h-[85vh] flex items-center relative group shadow-2xl">
-                                            <img src="https://images.unsplash.com/photo-1526676037777-05a232554f77?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-[3s]"/>
+                                            <img src="https://images.unsplash.com/photo-1522770179533-24471fcdba45?q=80&w=2000&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-[3s]"/>
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30"></div>
                                             <div className="relative z-10 p-8 md:p-12 max-w-4xl mx-auto text-center">
                                                 <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 leading-tight drop-shadow-2xl text-glow">勝利を、<br/>共に創る。</h1>
@@ -738,7 +765,7 @@
                                     </div>
                                 )}
 
-                                {/* Campaigns List (With Search) */}
+                                {/* Campaigns List */}
                                 {activeTab === 'campaigns' && (
                                     <div className="space-y-8 fade-in">
                                         <div className="max-w-md mx-auto search-input-container">
@@ -770,37 +797,41 @@
                                     </div>
                                 )}
 
-                                {/* Stylish About & How It Works (Mobile Compact) */}
+                                {/* Stylish About & How It Works (Mobile Compact Vertical) */}
                                 {(activeTab === 'about' || activeTab === 'howitworks') && (
                                     <div className="text-center max-w-5xl mx-auto py-12 fade-in">
                                         <h2 className="section-heading">{activeTab==='about'?'MySUPPORTERとは':'支援の仕組み'}</h2>
                                         
                                         {activeTab === 'about' ? (
-                                            <div className="mobile-snap-scroll md:grid md:grid-cols-3 gap-8">
+                                            <div className="grid md:grid-cols-3 gap-8">
                                                 {[
                                                     {icon:"fa-users", t:"地域との絆", d:"物理的な距離を超え、母校や地元のチームを直接サポート。あなたの想いが選手の力になります。"},
                                                     {icon:"fa-shirt", t:"透明性のある支援", d:"現金ではなく「チームが必要とする用具」そのものを届けます。使途が明確で安心です。"},
                                                     {icon:"fa-bolt", t:"可能性の最大化", d:"環境による格差をなくし、すべての学生アスリートが全力を出せる未来を創造します。"}
                                                 ].map((x,i)=>(
-                                                    <div key={i} className="feature-card shrink-0">
+                                                    <div key={i} className="feature-card">
                                                         <div className="feature-icon"><i className={`fa-solid ${x.icon}`}></i></div>
-                                                        <h3 className="font-bold text-xl mb-3 text-slate-800">{x.t}</h3>
-                                                        <p className="text-sm text-slate-500 leading-relaxed">{x.d}</p>
+                                                        <div className="feature-content">
+                                                            <h3 className="font-bold text-xl mb-3 text-slate-800 feature-title">{x.t}</h3>
+                                                            <p className="text-sm text-slate-500 leading-relaxed feature-desc">{x.d}</p>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="step-container max-w-4xl mx-auto text-left mt-8 mobile-snap-scroll">
+                                            <div className="step-container max-w-4xl mx-auto text-left mt-8">
                                                 {[
                                                     {step:1, t:"チームを探す", d:"応援したい学校や部活動をプロジェクト一覧から見つけます。"},
                                                     {step:2, t:"支援を贈る", d:"クレジットカードで、一口1,000円から手軽に支援金を贈れます。"},
                                                     {step:3, t:"物品が届く", d:"集まった資金で新品の用具を購入し、チームへ寄贈・配送します。"}
                                                 ].map((s,k)=>(
-                                                    <div key={k} className="step-card shrink-0">
+                                                    <div key={k} className="step-card">
                                                         <div className="step-number">{s.step}</div>
                                                         <i className="fa-solid fa-chevron-right step-arrow"></i>
-                                                        <h3 className="font-bold text-lg mb-2 text-slate-800 mt-2">{s.t}</h3>
-                                                        <p className="text-sm text-slate-500">{s.d}</p>
+                                                        <div className="feature-content">
+                                                            <h3 className="font-bold text-lg mb-2 text-slate-800 mt-2 feature-title">{s.t}</h3>
+                                                            <p className="text-sm text-slate-500 feature-desc">{s.d}</p>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
